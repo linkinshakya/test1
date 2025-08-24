@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Number Pop! — VACT Eduturismo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#4f46e5" />
+  <style>
+    :root{
+      --bg:#0f172a;           /* slate-900 */
+      --panel:#111827cc;      /* semi */
+      --card:#111827;         /* gray-900 */
+      --accent:#6366f1;       /* indigo-500 */
+      --accent-2:#22c55e;     /* emerald-500 */
+      --accent-3:#f59e0b;     /* amber-500 */
+      --text:#e5e7eb;         /* gray-200 */
+      --muted:#94a3b8;        /* slate-400 */
+      --ring:#a5b4fc;         /* indigo-300 */
+      --success:#10b981;
+      --danger:#ef4444;
+      --shadow:0 12px 30px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #1f2937 0%, transparent 60%),
+        radial-gradient(1000px 600px at 110% 10%, #1e293b 0%, transparent 60%),
+        linear-gradient(180deg, #0b1020 0%, #0f172a 100%);
+      color:var(--text);
+      display:flex; align-items:center; justify-content:center; padding:14px;
+    }
+    .app{
+      width:min(100%, 820px);
+      display:grid; gap:12px;
+      grid-template-rows:auto auto 1fr auto;
+    }
+    header{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.3px}
+    .dot{width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#8b5cf6)}
+    .controls{
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end;
+    }
+    select, input[type="number"], button{
+      background:var(--card); border:1px solid #1f2937; color:var(--text);
+      padding:10px 12px; border-radius:12px; outline:none; box-shadow:var(--shadow);
+    }
+    select, input[type="number"]{min-width:120px}
+    button{
+      border-color:transparent; cursor:pointer; font-weight:700;
+      transition:.2s transform ease, .2s background-color ease, .2s border-color ease;
+    }
+    button:active{transform:scale(.98)}
+    .btn-primary{background:linear-gradient(135deg, var(--accent), #8b5cf6)}
+    .btn-muted{background:#0b1222}
+    .btn-danger{background:linear-gradient(135deg,#ef4444,#f97316)}
+    .btn-ghost{background:transparent; border:1px solid #1f2937}
+    .hud{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+    }
+    .hud .tile{
+      background:var(--panel); border:1px solid #1f2937; border-radius:16px; padding:10px 12px; box-shadow:var(--shadow);
+      display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:48px;
+    }
+    .hud .label{font-size:12px; color:var(--muted)}
+    .hud .value{font-weight:800; font-size:18px}
+    .rule{
+      grid-column:1/-1; text-align:center; color:#c7d2fe; font-weight:700; letter-spacing:.3px
+    }
+
+    /* Playfield */
+    .field{
+      position:relative; overflow:hidden; border-radius:22px; border:1px solid #1f2937; background:
+        radial-gradient(1000px 400px at 50% 120%, #111827 20%, #0b1222 60%, #0a0f1d 100%);
+      min-height:58vh; /* mobile first */
+      touch-action:manipulation;
+      box-shadow: var(--shadow);
+      isolation:isolate;
+    }
+    .grid-hint{position:absolute; inset:0; background-image:
+      radial-gradient(circle at 2px 2px, rgba(255,255,255,.03) 2px, transparent 2px);
+      background-size:24px 24px; pointer-events:none; mix-blend:screen; opacity:.6;
+    }
+
+    .bubble{
+      position:absolute; left:50%; top:100%;
+      transform: translate(-50%, 0) scale(.95);
+      width: clamp(52px, 9vw, 84px); height: clamp(52px, 9vw, 84px); border-radius:50%;
+      display:flex; align-items:center; justify-content:center; font-weight:900; font-size:clamp(18px, 4.5vw, 26px);
+      color:#0b1020; text-shadow:0 1px 0 rgba(255,255,255,.5);
+      background:
+        radial-gradient(120% 120% at 30% 30%, #ffffff 0%, #c7d2fe 30%, #93c5fd 60%, #60a5fa 100%);
+      border:2px solid rgba(255,255,255,.6);
+      box-shadow: 0 8px 30px rgba(59,130,246,.35);
+      animation: float var(--dur,7s) linear forwards, sway var(--sway,3s) ease-in-out infinite alternate;
+      will-change: transform, top;
+      user-select:none;
+    }
+    .bubble.bad{
+      background:
+        radial-gradient(120% 120% at 30% 30%, #fff 0%, #fecaca 30%, #fda4af 60%, #f87171 100%);
+      box-shadow: 0 8px 30px rgba(239,68,68,.35);
+    }
+    @keyframes float{
+      from{transform: translate(var(--x, -50%), 5%) scale(.95)}
+      to{transform: translate(var(--x, -50%), -145%) scale(1)}
+    }
+    @keyframes sway{
+      from{ translate: var(--tx, 0) 0}
+      to{ translate: calc(var(--tx, 0) + 22px) 0}
+    }
+
+    .pop{
+      animation: pop .25s ease forwards;
+    }
+    @keyframes pop{
+      to{ transform: translate(var(--x, -50%), var(--ty, 0)) scale(1.3); opacity:0 }
+    }
+    .mistake{
+      animation: shake .25s ease;
+    }
+    @keyframes shake{
+      0%,100%{ transform: translate(var(--x, -50%), 0) }
+      25%{ transform: translate(calc(var(--x, -50%) - 6px), 0) }
+      75%{ transform: translate(calc(var(--x, -50%) + 6px), 0) }
+    }
+
+    /* Overlays */
+    .overlay{
+      position:absolute; inset:0; display:grid; place-items:center; background:rgba(10,14,24,.5);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index:3;
+    }
+    .panel{
+      background:linear-gradient(180deg, #0b1222, #0c1428);
+      border:1px solid #1f2937; border-radius:22px; padding:18px; width:min(560px, 92%); box-shadow:var(--shadow);
+    }
+    .panel h2{margin:0 0 8px; font-size:22px}
+    .panel p{margin:0 0 12px; color:var(--muted)}
+    .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+    .row > *{flex:1}
+    .meta{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:12px 0}
+
+    .kbd{background:#0b1222; border:1px solid #1f2937; padding:2px 8px; border-radius:6px; font-size:12px; color:#cbd5e1}
+
+    footer{color:var(--muted); text-align:center; font-size:13px}
+    a{color:#c7d2fe; text-decoration:none}
+    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;}
+    @media (min-height: 820px){
+      .field{min-height:66vh}
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="brand"><span class="dot"></span> <span>VACT • Number Pop!</span></div>
+      <div class="controls">
+        <label class="sr-only" for="mode">Mode</label>
+        <select id="mode" aria-label="Mode">
+          <option value="primes">Primes</option>
+          <option value="multiples" selected>Multiples of N</option>
+          <option value="squares">Perfect Squares</option>
+          <option value="factors">Factors of N</option>
+        </select>
+        <label class="sr-only" for="param">N</label>
+        <input id="param" type="number" value="6" min="2" max="99" step="1" aria-label="Target number N"/>
+        <button id="start" class="btn-primary">Start • 60s</button>
+        <button id="pause" class="btn-ghost" disabled>Pause</button>
+        <button id="reset" class="btn-muted" disabled>Reset</button>
+      </div>
+    </header>
+
+    <div class="hud">
+      <div class="tile"><span class="label">Time</span><span class="value" id="time">60</span></div>
+      <div class="tile"><span class="label">Score</span><span class="value" id="score">0</span></div>
+      <div class="tile"><span class="label">Streak</span><span class="value" id="streak">0</span></div>
+      <div class="tile"><span class="label">Best</span><span class="value" id="best">0</span></div>
+      <div class="tile rule" id="rule">Pop the multiples of 6</div>
+    </div>
+
+    <div class="field" id="field" role="application" aria-label="Playfield">
+      <div class="grid-hint"></div>
+
+      <!-- Intro overlay -->
+      <div class="overlay" id="intro">
+        <div class="panel">
+          <h2>Pop the right numbers!</h2>
+          <p>Choose a mode, set <strong>N</strong> if needed, then hit <strong>Start</strong>. Tap bubbles that match the rule. Missed correct bubbles reduce your streak!</p>
+          <div class="meta">
+            <div class="tile"><span class="label">Correct tap</span><span class="value">+10 • combo bonus</span></div>
+            <div class="tile"><span class="label">Wrong tap</span><span class="value">−5</span></div>
+            <div class="tile"><span class="label">Missed correct</span><span class="value">−1</span></div>
+            <div class="tile"><span class="label">Duration</span><span class="value">60s</span></div>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="introStart">Start Now</button>
+            <button class="btn-ghost" id="how">How it works</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results overlay -->
+      <div class="overlay" id="results" hidden>
+        <div class="panel">
+          <h2>Nice run! 🏆</h2>
+          <div class="meta">
+            <div class="tile"><span class="label">Score</span><span class="value" id="rScore">0</span></div>
+            <div class="tile"><span class="label">Best</span><span class="value" id="rBest">0</span></div>
+            <div class="tile"><span class="label">Accuracy</span><span class="value" id="rAcc">0%</span></div>
+            <div class="tile"><span class="label">Max Streak</span><span class="value" id="rStreak">0</span></div>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="playAgain">Play Again</button>
+            <button class="btn-muted" id="changeMode">Change Mode</button>
+            <button class="btn-danger" id="share">Share</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- How overlay -->
+      <div class="overlay" id="howPanel" hidden>
+        <div class="panel">
+          <h2>How it works</h2>
+          <p><strong>Primes:</strong> Pop bubbles that are prime numbers (2,3,5,7…)</p>
+          <p><strong>Multiples of N:</strong> Pop numbers divisible by N (set N above).</p>
+          <p><strong>Perfect Squares:</strong> Pop 1, 4, 9, 16…</p>
+          <p><strong>Factors of N:</strong> Pop numbers that divide N evenly.</p>
+          <div class="row" style="margin-top:8px">
+            <button class="btn-primary" id="closeHow">Got it</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Tip: On mobile, keep your thumb low and track groups of bubbles by elimination. <span class="kbd">Pause</span> saves your run.
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const $ = sel => document.querySelector(sel);
+      const $$ = sel => Array.from(document.querySelectorAll(sel));
+      const field = $('#field');
+      const timeEl = $('#time');
+      const scoreEl = $('#score');
+      const streakEl = $('#streak');
+      const bestEl = $('#best');
+      const ruleEl = $('#rule');
+
+      const modeSel = $('#mode');
+      const nInput = $('#param');
+      const startBtn = $('#start');
+      const pauseBtn = $('#pause');
+      const resetBtn = $('#reset');
+
+      const intro = $('#intro');
+      const introStart = $('#introStart');
+      const howBtn = $('#how');
+      const howPanel = $('#howPanel');
+      const closeHow = $('#closeHow');
+
+      const results = $('#results');
+      const rScore = $('#rScore');
+      const rBest = $('#rBest');
+      const rAcc = $('#rAcc');
+      const rStreak = $('#rStreak');
+      const playAgain = $('#playAgain');
+      const changeMode = $('#changeMode');
+      const shareBtn = $('#share');
+
+      // ---- Game state ----
+      let running = false;
+      let paused = false;
+      let tLeft = 60;
+      let score = 0;
+      let streak = 0;
+      let maxStreak = 0;
+      let correctTaps = 0;
+      let wrongTaps = 0;
+      let missedCorrect = 0;
+      let timerId = null;
+      let spawnId = null;
+      let lastTick = 0;
+      let spawnEvery = 900; // ms base, adaptive
+      let maxOnScreen = 12;
+      const ttlMin = 5000, ttlMax = 9000;
+
+      const best = +localStorage.getItem('vact-number-pop-best') || 0;
+      bestEl.textContent = best;
+
+      // Accessibility: keep rule text in sync
+      function updateRuleText(){
+        const mode = modeSel.value;
+        const N = clampN(+nInput.value);
+        let text = '';
+        if(mode === 'primes') text = 'Pop the prime numbers';
+        else if(mode === '
