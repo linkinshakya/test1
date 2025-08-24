@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Mini 3D RPG – Mobile Web Friendly</title>
+<meta name="theme-color" content="#0b1020" />
+<style>
+  :root{
+    --bg:#0b1020; --panel:rgba(0,0,0,.45); --text:#f8fafc; --muted:#92a1bd;
+    --ok:#22c55e; --bad:#ef4444; --accent:#4f46e5;
+    --sa-top: env(safe-area-inset-top); --sa-bot: env(safe-area-inset-bottom);
+    --sa-left: env(safe-area-inset-left); --sa-right: env(safe-area-inset-right);
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.35 system-ui,Segoe UI,Roboto,Arial;overscroll-behavior:none}
+  canvas{display:block}
+
+  /* HUD */
+  #hud{
+    position:fixed;left:calc(12px + var(--sa-left));top:calc(12px + var(--sa-top));z-index:10;
+    background:var(--panel);padding:10px 12px;border-radius:12px;backdrop-filter:blur(6px);
+    box-shadow:0 10px 20px rgba(0,0,0,.25)
+  }
+  #hud b{color:#fff}
+  #quest{margin-top:6px;color:var(--muted)}
+  #tip{
+    position:fixed;right:calc(12px + var(--sa-right));top:calc(12px + var(--sa-top));
+    background:var(--panel);padding:8px 10px;border-radius:12px;backdrop-filter:blur(6px);z-index:10
+  }
+  #msg{
+    position:fixed;left:50%;top:calc(16px + var(--sa-top));transform:translateX(-50%);
+    background:var(--panel);padding:8px 12px;border-radius:12px;z-index:11;display:none
+  }
+  .flashOK{animation:ok 180ms}
+  .flashBAD{animation:bad 220ms}
+  @keyframes ok{from{background:#0e2c19}to{background:var(--bg)}}
+  @keyframes bad{from{background:#2a1010}to{background:var(--bg)}}
+
+  /* Mobile controls */
+  #mobile{position:fixed;inset:0;pointer-events:none;z-index:8;touch-action:none}
+  .pad{
+    position:absolute;left:calc(14px + var(--sa-left));bottom:calc(14px + var(--sa-bot));
+    width:min(38vw,160px);height:min(38vw,160px);pointer-events:auto;user-select:none;
+  }
+  .base,.stick{position:absolute;border-radius:999px;box-sizing:border-box}
+  .base{inset:0;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.12)}
+  .stick{width:40%;height:40%;left:30%;top:30%;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.35)}
+  .btn{
+    position:absolute;right:calc(14px + var(--sa-right));bottom:calc(14px + var(--sa-bot));
+    width:min(16vw,72px);height:min(16vw,72px);border-radius:16px;display:grid;place-items:center;
+    background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.25);
+    pointer-events:auto;touch-action:manipulation;user-select:none
+  }
+  #jump{right:calc(14px + var(--sa-right) + min(18vw,84px));bottom:calc(14px + var(--sa-bot) + min(10vw,40px))}
+  .btn span{font-weight:800;font-size:20px}
+
+  /* Pause overlay (tab hidden, backgrounded) */
+  #paused{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:20
+  }
+  #paused .card{background:var(--panel);padding:16px 18px;border-radius:12px}
+  a{color:#a5b4fc;text-decoration:none}
+</style>
+</head>
+<body>
+  <div id="hud">
+    <div>❤️ <b id="hp">5</b> &nbsp; • &nbsp; 💎 <b id="crystals">0</b>/10 &nbsp; • &nbsp; 👾 <b id="slimes">0</b>/5</div>
+    <div id="quest">Quest: Collect 10 crystals. Avoid slimes or tap <b>⚔</b> / press <b>Space</b> to attack.</div>
+  </div>
+  <div id="tip">Drag to look • WASD / joystick to move</div>
+  <div id="msg"></div>
+
+  <!-- Mobile controls -->
+  <div id="mobile" style="display:none">
+    <div class="pad" id="pad"><div class="base"></div><div class="stick" id="stick"></div></div>
+    <div class="btn" id="attack"><span>⚔</span></div>
+    <div class="btn" id="jump"><span>⤴︎</span></div>
+  </div>
+
+  <div id="paused"><div class="card">⏸ Paused (tab hidden). Tap to resume.</div></div>
+
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+
+/* -------------------- helpers -------------------- */
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp = (a,b,t)=>a+(b-a)*t;
+const isTouch = ()=>('ontouchstart' in window)||navigator.maxTouchPoints>0;
+
+/* -------------------- renderer / scene -------------------- */
+const renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));   // throttle for mobile perf
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1020);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x202032, 0.9); scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffffff, 0.9); dir.position.set(6,10,4); scene.add(dir);
+
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+camera.position.set(0,2,5);
+
+/* -------------------- world -------------------- */
+const world = new THREE.Group(); scene.add(world);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(200,200),
+  new THREE.MeshStandardMaterial({color:0x0f1530, roughness:1, metalness:0})
+);
+ground.rotation.x = -Math.PI/2; ground.receiveShadow=true; world.add(ground);
+
+const walls=[];
+function addWall(x,z,w,d,rot=0){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,3,d),
+    new THREE.MeshStandardMaterial({color:0x1c254b, roughness:.9}));
+  m.position.set(x,1.5,z); m.rotation.y=rot; world.add(m); walls.push(m);
+}
+for(let i=0;i<12;i++){ const a=i/12*Math.PI*2,r=40; addWall(Math.cos(a)*r,Math.sin(a)*r,8,2,a); }
+addWall(0,0,20,2); addWall(0,10,14,2); addWall(10,0,2,14);
+addWall(-12,-8,10,2); addWall(12,8,10,2); addWall(-10,10,2,10);
+
+/* -------------------- player -------------------- */
+const player = new THREE.Object3D(); player.position.set(0,1,0); scene.add(player);
+const body = new THREE.Mesh(
+  new THREE.CapsuleGeometry(0.5,0.8,6,12),
+  new THREE.MeshStandardMaterial({color:0x4f46e5, roughness:.5, metalness:.2})
+);
+player.add(body);
+const sword = new THREE.Mesh(
+  new THREE.BoxGeometry(0.1,0.1,1.2),
+  new THREE.MeshStandardMaterial({color:0xcccccc, metalness:.8, roughness:.3})
+);
+sword.position.set(0.6,0.4,0.1); sword.rotation.y=Math.PI*.5; player.add(sword);
+
+let hp=5, crystals=0, slimesDefeated=0;
+const ui={ hp:qs('#hp'), crystals:qs('#crystals'), slimes:qs('#slimes'), msg:qs('#msg') };
+function qs(s){ return document.querySelector(s); }
+function updateHUD(){ ui.hp.textContent=hp; ui.crystals.textContent=crystals; ui.slimes.textContent=slimesDefeated; }
+
+/* -------------------- third-person camera -------------------- */
+let yaw=0, pitch=-0.2;
+const camOffset = new THREE.Vector3(0,2.2,4.5);
+function updateCamera(dt){
+  const off = camOffset.clone().applyEuler(new THREE.Euler(pitch,yaw,0,'YXZ'));
+  const target = player.position.clone().add(off);
+  camera.position.lerp(target, 1-Math.pow(0.001,dt));
+  camera.lookAt(player.position.x, player.position.y+1, player.position.z);
+}
+
+/* -------------------- input -------------------- */
+const input={f:0,b:0,l:0,r:0, attack:false, jump:false};
+const look={drag:false,lastX:0,lastY:0};
+const keymap={KeyW:'f',KeyS:'b',KeyA:'l',KeyD:'r',ArrowUp:'f',ArrowDown:'b',ArrowLeft:'l',ArrowRight:'r',Space:'jump'};
+addEventListener('keydown',e=>{ const k=keymap[e.code]; if(k) input[k]=1; if(e.code==='Space') input.attack=true; },{passive:true});
+addEventListener('keyup',e=>{ const k=keymap[e.code]; if(k) input[k]=0; },{passive:true});
+
+const startDrag=(x,y)=>{ look.drag=true; look.lastX=x; look.lastY=y; };
+const moveDrag=(x,y)=>{
+  if(!look.drag) return;
+  const dx=x-look.lastX, dy=y-look.lastY; look.lastX=x; look.lastY=y;
+  yaw -= dx*0.003; pitch = clamp(pitch - dy*0.003, -1.2, 0.5);
+};
+const endDrag=()=>{ look.drag=false; };
+
+addEventListener('mousedown',e=>{ if(e.button===0) startDrag(e.clientX,e.clientY); });
+addEventListener('mousemove',e=>moveDrag(e.clientX,e.clientY));
+addEventListener('mouseup',endDrag);
+addEventListener('mouseleave',endDrag);
+
+/* -------------------- mobile controls -------------------- */
+const mobile=qs('#mobile'), pad=qs('#pad'), stick=qs('#stick'), btnAtk=qs('#attack'), btnJump=qs('#jump');
+const joy={active:false, cx:0, cy:0, vx:0, vy:0};
+function setStick(x,y){
+  const R=pad.clientWidth*0.5*0.85, r=stick.clientWidth*0.5;
+  const dx=x-joy.cx, dy=y-joy.cy, len=Math.hypot(dx,dy)||1;
+  const ux=dx/len, uy=dy/len, dist=Math.min(len, R-r);
+  stick.style.left=`calc(50% + ${ux*dist - stick.clientWidth/2}px)`;
+  stick.style.top =`calc(50% + ${uy*dist - stick.clientHeight/2}px)`;
+  joy.vx = (dist/(R-r))*ux; joy.vy = (dist/(R-r))*uy;
+}
+if(isTouch()){
+  mobile.style.display='block';
+
+  pad.addEventListener('touchstart',e=>{
+    e.preventDefault(); joy.active=true;
+    const t=e.touches[0]; const rect=pad.getBoundingClientRect();
+    joy.cx=rect.left+rect.width/2; joy.cy=rect.top+rect.height/2;
+    setStick(t.clientX,t.clientY);
+  },{passive:false});
+  pad.addEventListener('touchmove',e=>{ e.preventDefault(); if(!joy.active) return; const t=e.touches[0]; setStick(t.clientX,t.clientY); },{passive:false});
+  pad.addEventListener('touchend',e=>{
+    e.preventDefault(); joy.active=false; joy.vx=joy.vy=0;
+    stick.style.left="30%"; stick.style.top="30%";
+  },{passive:false});
+
+  // look anywhere not on controls
+  addEventListener('touchstart',e=>{
+    if(e.target.closest('#mobile')) return;
+    startDrag(e.touches[0].clientX,e.touches[0].clientY);
+  },{passive:false});
+  addEventListener('touchmove',e=>{
+    if(look.drag) e.preventDefault();
+    moveDrag(e.touches[0].clientX,e.touches[0].clientY);
+  },{passive:false});
+  addEventListener('touchend',endDrag,{passive:false});
+
+  btnAtk.addEventListener('touchstart',e=>{e.preventDefault(); input.attack=true;},{passive:false});
+  btnJump.addEventListener('touchstart',e=>{e.preventDefault(); input.jump=true;},{passive:false});
+}
+
+/* -------------------- movement / collisions -------------------- */
+const vel=new THREE.Vector3(), fwd=new THREE.Vector3(), right=new THREE.Vector3();
+let onGround=true, yVel=0;
+function collideWalls(next){
+  const radius=0.45;
+  for(const w of walls){
+    // AABB (axis-aligned) around each wall box (we ignore rotation for simplicity)
+    const hw=w.geometry.parameters.width/2, hd=w.geometry.parameters.depth/2;
+    const pos=w.position;
+    const minX=pos.x - hw - radius, maxX=pos.x + hw + radius;
+    const minZ=pos.z - hd - radius, maxZ=pos.z + hd + radius;
+    if(next.x>minX && next.x<maxX && next.z>minZ && next.z<maxZ){
+      const dx=Math.min(maxX-next.x, next.x-minX);
+      const dz=Math.min(maxZ-next.z, next.z-minZ);
+      if(dx<dz){ next.x = (next.x>pos.x)? maxX : minX; vel.x=0; }
+      else{ next.z = (next.z>pos.z)? maxZ : minZ; vel.z=0; }
+    }
+  }
+  return next;
+}
+
+/* -------------------- enemies & crystals -------------------- */
+const enemies=[], crystalsArr=[];
+function spawnSlime(x,z){
+  const g=new THREE.SphereGeometry(0.6, 20,16);
+  const m=new THREE.MeshStandardMaterial({color:0x57d6a6, roughness:.7});
+  const s=new THREE.Mesh(g,m); s.position.set(x,0.6,z);
+  s.userData={dir:Math.random()*Math.PI*2, hp:2, alive:true, hurtTimer:0};
+  world.add(s); enemies.push(s);
+}
+function spawnCrystal(x,z){
+  const g=new THREE.IcosahedronGeometry(0.35,0);
+  const m=new THREE.MeshStandardMaterial({color:0x76d0ff, emissive:0x0c4a6e, emissiveIntensity:.35, roughness:.2, metalness:.1});
+  const c=new THREE.Mesh(g,m); c.position.set(x,0.5,z); c.userData={spin:Math.random()*Math.PI*2, taken:false};
+  world.add(c); crystalsArr.push(c);
+}
+for(let i=0;i<5;i++) spawnSlime((Math.random()*60-30),(Math.random()*60-30));
+for(let i=0;i<18;i++) spawnCrystal((Math.random()*80-40),(Math.random()*80-40));
+
+/* -------------------- combat & UI -------------------- */
+let attackTimer=0, hurtCooldown=0;
+function uiFlash(text){ ui.msg.textContent=text; ui.msg.style.display='block'; clearTimeout(ui.msg._t); ui.msg._t=setTimeout(()=>ui.msg.style.display='none',800); }
+function doAttack(){ attackTimer=0.18; uiFlash("Attack!"); }
+function damagePlayer(){
+  if(hurtCooldown>0) return;
+  hp=Math.max(0,hp-1); updateHUD(); hurtCooldown=1.0;
+  body.material.color.setHex(0xff4d4d); document.body.classList.add('flashBAD');
+  setTimeout(()=>{ document.body.classList.remove('flashBAD'); body.material.color.setHex(0x4f46e5); },150);
+  if(hp===0) uiFlash("You were defeated! Reload to retry.");
+}
+
+/* -------------------- main loop -------------------- */
+let last=performance.now(), paused=false;
+function loop(now){
+  if(paused){ requestAnimationFrame(loop); return; }
+  const dt=Math.min(0.033,(now-last)/1000); last=now;
+
+  // inputs (merge keyboard + joystick)
+  const mx = (input.r - input.l) + (isTouch()? joy.vx : 0);
+  const mz = (input.b - input.f) + (isTouch()? -joy.vy : 0);
+  const speed = 6;
+
+  fwd.set(Math.sin(yaw),0,Math.cos(yaw));
+  right.set(fwd.z,0,-fwd.x);
+
+  vel.x = lerp(vel.x, (right.x*mx + fwd.x*-mz) * speed, 0.15);
+  vel.z = lerp(vel.z, (right.z*mx + fwd.z*-mz) * speed, 0.15);
+
+  if(input.jump && onGround){ yVel=6.5; onGround=false; input.jump=false; }
+  yVel -= 18*dt;
+
+  let next = player.position.clone().addScaledVector(new THREE.Vector3(vel.x,0,vel.z), dt);
+  next = collideWalls(next);
+  player.position.copy(next);
+  player.position.y += yVel*dt;
+  if(player.position.y<=1){ player.position.y=1; onGround=true; yVel=0; }
+
+  const mvLen=Math.hypot(vel.x,vel.z);
+  if(mvLen>0.05){ const dir=Math.atan2(vel.x,vel.z); body.rotation.y = lerp(body.rotation.y, dir, 0.2); }
+
+  if(input.attack){ doAttack(); input.attack=false; }
+  if(attackTimer>0){ attackTimer-=dt; sword.rotation.z = Math.sin((0.18-attackTimer)*18)*0.9; } else { sword.rotation.z*=0.8; }
+
+  // enemies
+  for(const e of enemies){
+    if(!e.userData.alive) continue;
+    e.userData.hurtTimer=Math.max(0,e.userData.hurtTimer-dt);
+    const toP=player.position.clone().sub(e.position);
+    const dist=toP.length();
+    if(dist<10 && Math.random()<0.02) e.userData.dir=Math.atan2(toP.x,toP.z);
+    if(Math.random()<0.01) e.userData.dir+=(Math.random()-.5);
+    const sp=2;
+    e.position.x += Math.sin(e.userData.dir)*sp*dt;
+    e.position.z += Math.cos(e.userData.dir)*sp*dt;
+    collideWalls(e.position);
+    const d=e.position.distanceTo(player.position);
+    if(d<1.1) damagePlayer();
+    if(attackTimer>0 && d<1.4 && e.userData.hurtTimer<=0){
+      e.userData.hp--; e.userData.hurtTimer=.35; e.material.color.setHex(0xffaa66);
+      setTimeout(()=>e.material.color.setHex(0x57d6a6),160);
+      if(e.userData.hp<=0){ e.userData.alive=false; e.visible=false; slimesDefeated++; updateHUD(); document.body.classList.add('flashOK'); setTimeout(()=>document.body.classList.remove('flashOK'),120); }
+    }
+  }
+
+  // crystals
+  for(const c of crystalsArr){
+    if(c.userData.taken) continue;
+    c.rotation.y += dt*1.5;
+    c.position.y = 0.5 + Math.sin((now*0.001)+c.userData.spin)*0.06;
+    if(c.position.distanceTo(player.position)<1){
+      c.userData.taken=true; c.visible=false; crystals++; updateHUD();
+      document.body.classList.add('flashOK'); setTimeout(()=>document.body.classList.remove('flashOK'),120);
+      if(crystals>=10) uiFlash("Quest ✓  Collected 10 crystals!");
+    }
+  }
+
+  if(hurtCooldown>0) hurtCooldown-=dt;
+
+  updateCamera(dt);
+  renderer.render(scene,camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* -------------------- buttons -------------------- */
+qs('#attack').addEventListener('click',()=>{ input.attack=true; });
+qs('#jump').addEventListener('click',()=>{ input.jump=true; });
+updateHUD();
+
+/* -------------------- resize / visibility -------------------- */
+addEventListener('resize', ()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+}, {passive:true});
+
+document.addEventListener('visibilitychange',()=>{
+  paused = document.hidden;
+  qs('#paused').style.display = paused ? 'grid' : 'none';
+});
+
+/* Optional: tap to hide address bar better on iOS after first interaction */
+addEventListener('touchend',()=>window.scrollTo(0,1),{passive:true});
+</script>
+</body>
+</html>
