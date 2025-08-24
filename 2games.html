@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Memory Game & Math Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --primary: #4f46e5;
+      --primary-fore: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --ring: #a5b4fc;
+      --shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Dynamic viewport for mobile */
+    .screen {
+      width: 100%;
+      height: 100vh;              /* fallback */
+      height: 100dvh;             /* modern */
+      height: calc(var(--vh, 1vh) * 100); /* JS-updated */
+      display: none;
+      flex-direction: column;
+    }
+    .screen.show { display: flex; }
+
+    /* Menu */
+    .menu {
+      background: linear-gradient(180deg, #6366f1, #4338ca);
+      color: white;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      gap: 16px;
+    }
+    .menu .box {
+      width: min(560px, 100%);
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+    .title { font-size: 28px; font-weight: 800; letter-spacing: 0.2px; margin: 0 0 8px; }
+    .sub { opacity: .95; margin: 0 0 20px; }
+    .row { display:flex; flex-direction:column; gap:12px }
+    @media (min-width: 520px){ .row{ flex-direction:row; justify-content:center } }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 18px;
+      font-weight: 700;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform .12s ease, opacity .2s ease;
+      background: white; color: #312e81;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn.secondary { background: #eef2ff; color: #3730a3; }
+
+    /* Top bars */
+    .hud, .mq-hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #fff;
+      box-shadow: 0 1px 0 rgba(15,23,42,.05), var(--shadow);
+      z-index: 2;
+      gap: 8px;
+    }
+    .stat { font-weight: 700; }
+    .time { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .btn.small { padding: 10px 12px; font-weight: 600; border-radius: 10px; background: var(--primary); color: var(--primary-fore); }
+    .btn.light { background:#fff; color:#111827; border:1px solid #e5e7eb }
+
+    /* MEMORY GAME styles (from your code) */
+    .start {
+      background: linear-gradient(180deg, #6366f1, #4338ca);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .start .box {
+      width: min(520px, 100%);
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .board {
+      flex: 1;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      align-content: center;
+    }
+    .card { position: relative; perspective: 1000px; border-radius: 16px; box-shadow: var(--shadow); outline: none; }
+    .cardBtn { appearance: none; -webkit-appearance: none; cursor: pointer; width: 100%; height: 100%; border: none; background: transparent; padding: 0; border-radius: 16px; }
+    .inner { position: relative; width: 100%; aspect-ratio: 1 / 1; transform-style: preserve-3d; transition: transform .35s ease; border-radius: 16px; overflow: hidden; }
+    .card.flipped .inner, .card.matched .inner { transform: rotateY(180deg); }
+    .face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; backface-visibility: hidden; border-radius: 16px; font-size: clamp(24px, 6.4vw, 40px); user-select: none; }
+    .front { background: var(--card); }
+    .back { transform: rotateY(180deg); background: radial-gradient(circle at 30% 30%, #6366f1, #4f46e5); color: white; letter-spacing: .2em; font-weight: 800; }
+    .matched .front { background: #e7f9ef; border: 2px solid #34d399; }
+    .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); z-index: 5; padding: 16px; }
+    .overlay.show { display: flex; }
+    .panel { width: 100%; max-width: 360px; background: #fff; border-radius: 18px; padding: 20px; text-align: center; box-shadow: var(--shadow); }
+    .panel h2 { margin: 0 0 6px; font-size: 22px; }
+    .muted { color: var(--muted); }
+
+    /* MATH QUIZ styles */
+    .mq-main{ flex:1; display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; padding:16px }
+    .mq-q{ font-size:clamp(20px,6.5vw,36px); font-weight:900; text-align:center }
+    .mq-opts{ width:100%; max-width:560px; display:grid; grid-template-columns:repeat(2,1fr); gap:12px }
+    .mq-opt{ padding:16px 14px; border-radius:16px; border:none; background:#fff; box-shadow:var(--shadow); font-size:clamp(18px,4.8vw,22px); font-weight:800; cursor:pointer; touch-action:manipulation; transition:transform .1s ease }
+    .mq-opt:active{ transform:scale(.98) }
+    .mq-opt.correct{ background:#dcfce7; border:2px solid #22c55e }
+    .mq-opt.wrong{ background:#fee2e2; border:2px solid #ef4444 }
+    .mq-tag{ padding:6px 10px; border-radius:999px; background:#ecfeff; border:1px solid #a5f3fc; font-weight:700; font-size:12px }
+    .mq-footer{ display:flex; gap:10px; align-items:center; justify-content:center; padding:12px }
+    .pill{ padding:8px 12px; border-radius:999px; background:#fff; box-shadow:var(--shadow); font-weight:700 }
+
+    /* Utility */
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- MENU -->
+  <section id="menu" class="screen menu show" role="main" aria-label="Choose a game">
+    <div class="box">
+      <h1 class="title">Choose a Game</h1>
+      <p class="sub">Pick one to start. Both are mobile‑friendly and full‑screen.</p>
+      <div class="row">
+        <button id="goMemory" class="btn">🎴 Memory Game</button>
+        <button id="goMath" class="btn secondary">➕ Math Quiz</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== MEMORY GAME (your code) ========== -->
+  <!-- Start -->
+  <section id="startScreen" class="screen start" aria-label="Memory start">
+    <div class="box" aria-live="polite">
+      <h1 class="title">Memory Game</h1>
+      <p class="sub">Match all the pairs. Fast taps, sharp memory!</p>
+      <div style="display:flex; gap:8px; justify-content:center;">
+        <button id="memBack" class="btn light" aria-label="Back to menu">Back to menu</button>
+        <button id="startBtn" class="btn" aria-label="Start playing">Start playing ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section id="gameScreen" class="screen" aria-label="Memory game">
+    <header class="hud" role="toolbar" aria-label="Game controls">
+      <div style="display:flex; gap:8px; align-items:center">
+        <button id="memBackInGame" class="btn small light" aria-label="Back to menu">Back</button>
+        <div class="stat">Moves: <span id="moves">0</span></div>
+      </div>
+      <div class="time" id="clock">00:00</div>
+      <button id="restartBtn" class="btn small" aria-label="Restart game">Restart</button>
+    </header>
+    <div id="board" class="board" aria-label="Memory board"></div>
+  </section>
+
+  <!-- Win Overlay -->
+  <div id="winOverlay" class="overlay" aria-modal="true" role="dialog" aria-labelledby="winTitle" aria-describedby="winStats">
+    <div class="panel">
+      <h2 id="winTitle">You win! 🎉</h2>
+      <p id="winStats" class="muted">0 moves · 00:00</p>
+      <button id="playAgainBtn" class="btn small" style="margin-top:10px;">Play again</button>
+    </div>
+  </div>
+
+  <!-- ========== MATH QUIZ (with at-least-one-per-category) ========== -->
+  <!-- Start -->
+  <section id="mqStart" class="screen start" aria-label="Math quiz start">
+    <div class="box">
+      <h1 class="title">Math Quiz</h1>
+      <p class="sub">We’ll ask at least one question from each category first. You can still pick a preferred difficulty.</p>
+      <div style="display:flex; gap:8px; justify-content:center; margin:10px 0 18px">
+        <label for="levelStart" style="font-weight:700">Preferred:</label>
+        <select id="levelStart" class="btn light" style="padding:10px 12px; border-radius:10px; border:1px solid #e5e7eb">
+          <option value="c6">Class 6</option>
+          <option value="c7">Class 7</option>
+          <option value="c8">Class 8</option>
+          <option value="c9">Class 9</option>
+          <option value="c10">Class 10</option>
+          <option value="adult">Adults</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:center;">
+        <button id="mqBack" class="btn light" aria-label="Back to menu">Back to menu</button>
+        <button id="mqPlay" class="btn" aria-label="Start playing">Start playing ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section id="mqGame" class="screen" aria-label="Math quiz game">
+    <header class="mq-hud" role="toolbar" aria-label="Math game controls">
+      <div style="display:flex; gap:8px; align-items:center">
+        <button id="mqBackInGame" class="btn small light" aria-label="Back to menu">Back</button>
+        <div class="stat">Score: <span id="score">0</span></div>
+        <div class="muted">Q: <span id="count">0</span></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px">
+        <span class="mq-tag" id="nowTag">Now: Class 6</span>
+        <label for="level" class="muted" style="font-weight:700">Preferred</label>
+        <select id="level" class="btn light" style="padding:8px 10px; border-radius:10px; border:1px solid #e5e7eb">
+          <option value="c6">Class 6</option>
+          <option value="c7">Class 7</option>
+          <option value="c8">Class 8</option>
+          <option value="c9">Class 9</option>
+          <option value="c10">Class 10</option>
+          <option value="adult">Adults</option>
+        </select>
+      </div>
+      <button id="mqRestart" class="btn small">Restart</button>
+    </header>
+
+    <main class="mq-main">
+      <div id="question" class="mq-q">—</div>
+      <div id="options" class="mq-opts"></div>
+    </main>
+
+    <footer class="mq-footer">
+      <div class="pill">Tap an option to continue</div>
+    </footer>
+  </section>
+
+  <script>
+    /* ===== Viewport height fix for mobile address bar ===== */
+    function setVH() {
+      document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px');
+    }
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+
+    /* ===== Screens ===== */
+    const scrMenu = document.getElementById('menu');
+
+    // Memory screens
+    const memStart = document.getElementById('startScreen');
+    const memGame  = document.getElementById('gameScreen');
+
+    // Math quiz screens
+    const mqStart  = document.getElementById('mqStart');
+    const mqGame   = document.getElementById('mqGame');
+
+    function show(screen) {
+      // hide all
+      [scrMenu, memStart, memGame, mqStart, mqGame].forEach(s => s.classList.remove('show'));
+      screen.classList.add('show');
+    }
+
+    /* ===== MENU buttons ===== */
+    document.getElementById('goMemory').addEventListener('click', () => show(memStart));
+    document.getElementById('goMath').addEventListener('click', () => show(mqStart));
+
+    /* ======= MEMORY GAME (your original, with back buttons) ======= */
+    const boardEl     = document.getElementById('board');
+    const startBtn    = document.getElementById('startBtn');
+    const restartBtn  = document.getElementById('restartBtn');
+    const playAgainBtn= document.getElementById('playAgainBtn');
+    const movesEl     = document.getElementById('moves');
+    const clockEl     = document.getElementById('clock');
+    const winOverlay  = document.getElementById('winOverlay');
+    const winStatsEl  = document.getElementById('winStats');
+    const memBack     = document.getElementById('memBack');
+    const memBackInGame = document.getElementById('memBackInGame');
+
+    const symbols = ['🍎','🚀','🐨','🎧','🌞','⚽','🚲','📚']; // 8 pairs = 16 cards
+    let deck = [];
+    let firstPick = null;
+    let secondPick = null;
+    let lockBoard = false;
+    let moves = 0;
+    let seconds = 0;
+    let timer = null;
+
+    const shuffle = (arr) => {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+
+    const fmtTime = (s) => {
+      const mm = String(Math.floor(s / 60)).padStart(2, '0');
+      const ss = String(s % 60).padStart(2, '0');
+      return `${mm}:${ss}`;
+    };
+
+    function buildDeck() {
+      const base = symbols.flatMap((sym, idx) => ([
+        { id: `${idx}-a`, symbol: sym, matched: false },
+        { id: `${idx}-b`, symbol: sym, matched: false },
+      ]));
+      return shuffle(base);
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      deck.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.dataset.index = index;
+
+        const btn = document.createElement('button');
+        btn.className = 'cardBtn';
+        btn.type = 'button';
+        btn.setAttribute('aria-label', card.matched ? `Matched ${card.symbol}` : 'Hidden card');
+
+        const inner = document.createElement('div');
+        inner.className = 'inner';
+
+        const front = document.createElement('div');
+        front.className = 'face front';
+        front.textContent = card.symbol;
+
+        const back = document.createElement('div');
+        back.className = 'face back';
+        back.textContent = '★';
+
+        inner.appendChild(front);
+        inner.appendChild(back);
+        btn.appendChild(inner);
+        cardEl.appendChild(btn);
+        boardEl.appendChild(cardEl);
+      });
+      updateFlips();
+    }
+
+    function updateHUD() {
+      movesEl.textContent = moves;
+      clockEl.textContent = fmtTime(seconds);
+    }
+
+    function updateFlips() {
+      boardEl.querySelectorAll('.card').forEach((el, idx) => {
+        const card = deck[idx];
+        const isFlipped = (firstPick && firstPick.idx === idx) || (secondPick && secondPick.idx === idx) || card.matched;
+        el.classList.toggle('flipped', isFlipped);
+        el.classList.toggle('matched', card.matched);
+      });
+    }
+
+    function startTimer() {
+      stopTimer();
+      timer = setInterval(() => {
+        seconds += 1;
+        clockEl.textContent = fmtTime(seconds);
+      }, 1000);
+    }
+    function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+    function allMatched() { return deck.every(c => c.matched); }
+
+    function startGame() {
+      document.documentElement.requestFullscreen?.().catch(()=>{});
+      show(memGame);
+
+      deck = buildDeck();
+      firstPick = null;
+      secondPick = null;
+      lockBoard = false;
+      moves = 0;
+      seconds = 0;
+      updateHUD();
+      renderBoard();
+      startTimer();
+    }
+
+    function restartGame() {
+      deck = buildDeck();
+      firstPick = null;
+      secondPick = null;
+      lockBoard = false;
+      moves = 0;
+      seconds = 0;
+      winOverlay.classList.remove('show');
+      updateHUD();
+      renderBoard();
+      stopTimer();
+      startTimer();
+    }
+
+    function handleCardTap(idx) {
+      if (lockBoard) return;
+      const card = deck[idx];
+      if (card.matched) return;
+
+      if (firstPick && firstPick.idx === idx) return;
+      if (secondPick && secondPick.idx === idx) return;
+
+      if (!firstPick) {
+        firstPick = { idx, symbol: card.symbol };
+        updateFlips();
+        return;
+      }
+
+      if (!secondPick) {
+        secondPick = { idx, symbol: card.symbol };
+        lockBoard = true;
+        moves += 1;
+        updateHUD();
+        updateFlips();
+
+        if (firstPick.symbol === secondPick.symbol) {
+          setTimeout(() => {
+            deck[firstPick.idx].matched = true;
+            deck[secondPick.idx].matched = true;
+            firstPick = null;
+            secondPick = null;
+            lockBoard = false;
+            updateFlips();
+
+            if (allMatched()) {
+              stopTimer();
+              winStatsEl.textContent = `${moves} moves · ${fmtTime(seconds)}`;
+              winOverlay.classList.add('show');
+              try { navigator.vibrate && navigator.vibrate(30); } catch {}
+            }
+          }, 300);
+        } else {
+          setTimeout(() => {
+            firstPick = null;
+            secondPick = null;
+            lockBoard = false;
+            updateFlips();
+          }, 700);
+        }
+      }
+    }
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', restartGame);
+    playAgainBtn.addEventListener('click', restartGame);
+
+    boardEl.addEventListener('click', (e) => {
+      const cardEl = e.target.closest('.card');
+      if (!cardEl) return;
+      const idx = Number(cardEl.dataset.index);
+      handleCardTap(idx);
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!memGame.classList.contains('show')) return;
+      e.preventDefault();
+    }, { passive: false });
+
+    memBack.addEventListener('click', () => { stopTimer(); show(scrMenu); });
+    memBackInGame.addEventListener('click', () => { stopTimer(); show(scrMenu); });
+
+    /* ======= MATH QUIZ (with guaranteed category coverage) ======= */
+    const mqPlay   = document.getElementById('mqPlay');
+    const mqRestart= document.getElementById('mqRestart');
+    const mqBack   = document.getElementById('mqBack');
+    const mqBackInGame = document.getElementById('mqBackInGame');
+    const level    = document.getElementById('level');
+    const levelStart = document.getElementById('levelStart');
+    const qEl      = document.getElementById('question');
+    const optsEl   = document.getElementById('options');
+    const scoreEl  = document.getElementById('score');
+    const countEl  = document.getElementById('count');
+    const nowTag   = document.getElementById('nowTag');
+
+    const allLevels = ['c6','c7','c8','c9','c10','adult'];
+    const labels = { c6:'Class 6', c7:'Class 7', c8:'Class 8', c9:'Class 9', c10:'Class 10', adult:'Adults' };
+
+    let preferred = 'c6';
+    let mqScore = 0;
+    let mqCount = 0;
+    let mqLock  = false;
+    let coverageQueue = [];
+
+    const rand = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;
+    const choice = (arr)=> arr[Math.floor(Math.random()*arr.length)];
+    function shuffleArr(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    function vibrate(ms=25){ try{ navigator.vibrate && navigator.vibrate(ms); }catch{} }
+
+    function genC6(){
+      const op = Math.random()<0.5?'+':'-';
+      let a = rand(0,50), b = rand(0,50);
+      if (op==='-' && b>a) [a,b]=[b,a];
+      const ans = op==='+' ? a+b : a-b;
+      return {text:`${a} ${op} ${b} = ?`, answer: ans, kind:'int'};
+    }
+    function genC7(){
+      const ops=['+','-','×']; const op=choice(ops);
+      let a, b, ans;
+      if (op==='×'){ a = rand(2,12); b = rand(2,12); ans = a*b; }
+      else if (op==='-'){ a = rand(0,100); b = rand(0,a); ans = a-b; }
+      else { a = rand(0,80); b = rand(0,80); ans = a+b; }
+      return {text:`${a} ${op} ${b} = ?`, answer: ans, kind:'int'};
+    }
+    function genC8(){
+      const ops=['+','-','×','÷']; const op=choice(ops);
+      let a,b,ans;
+      if (op==='÷'){ b = rand(2,12); ans = rand(2,12); a = b*ans; }
+      else if (op==='×'){ a=rand(3,20); b=rand(3,20); ans=a*b; }
+      else if (op==='-'){ a=rand(30,150); b=rand(0,a); ans=a-b; }
+      else { a=rand(10,120); b=rand(10,120); ans=a+b; }
+      return {text:`${a} ${op} ${b} = ?`, answer:ans, kind:'int'};
+    }
+    function genC9(){
+      const pattern = choice(['(a+b)×c','(a-b)×c','a×b+c','a×b-b']);
+      let a,b,c,ans,txt;
+      switch(pattern){
+        case '(a+b)×c': a=rand(5,20); b=rand(5,20); c=rand(2,12); ans=(a+b)*c; txt=`(${a} + ${b}) × ${c} = ?`; break;
+        case '(a-b)×c': a=rand(10,30); b=rand(0,a-5); c=rand(2,12); ans=(a-b)*c; txt=`(${a} - ${b}) × ${c} = ?`; break;
+        case 'a×b+c':   a=rand(5,20); b=rand(5,15); c=rand(5,60); ans=a*b+c; txt=`${a} × ${b} + ${c} = ?`; break;
+        default:        a=rand(5,20); b=rand(2,10); ans=a*b-b; txt=`${a} × ${b} - ${b} = ?`;
+      }
+      return {text:txt, answer:ans, kind:'int'};
+    }
+    function genC10(){
+      const pattern = choice(['a² + b','a² - b','a×b + c²','(a+b)²','a(b+c)']);
+      let a,b,c,ans,txt;
+      switch(pattern){
+        case 'a² + b': a=rand(3,15); b=rand(5,60); ans=a*a+b; txt=`${a}² + ${b} = ?`; break;
+        case 'a² - b': a=rand(6,15); b=rand(1,a*a-5); ans=a*a-b; txt=`${a}² - ${b} = ?`; break;
+        case 'a×b + c²': a=rand(3,12); b=rand(3,12); c=rand(2,10); ans=a*b+c*c; txt=`${a} × ${b} + ${c}² = ?`; break;
+        case '(a+b)²': a=rand(3,12); b=rand(3,12); ans=(a+b)*(a+b); txt=`(${a} + ${b})² = ?`; break;
+        default: a=rand(3,15); b=rand(3,12); c=rand(3,12); ans=a*(b+c); txt=`${a}(${b} + ${c}) = ?`;
+      }
+      return {text:txt, answer:ans, kind:'int'};
+    }
+    function genAdult(){
+      const pattern = choice(['decAdd','percentOf','decMul','mixPercAdd']);
+      let a,b,ans,txt;
+      const to1 = (n)=> Math.round(n*10)/10;
+      switch(pattern){
+        case 'decAdd':
+          a = to1(rand(10,200)/10); b = to1(rand(10,200)/10); ans = to1(a+b);
+          txt = `${a} + ${b} = ?`; break;
+        case 'percentOf':
+          a = rand(10,90); b = rand(20,400); ans = to1(a*b/100);
+          txt = `${a}% of ${b} = ?`; break;
+        case 'decMul':
+          a = to1(rand(10,150)/10); b = to1(rand(10,150)/10); ans = to1(a*b);
+          txt = `${a} × ${b} = ?`; break;
+        default:
+          a = rand(10,60); b = to1(rand(50,200)/10); ans = to1((a/100)*b + b);
+          txt = `${a}% of ${b} + ${b} = ?`; break;
+      }
+      return {text:txt, answer:ans, kind:'dec1'};
+    }
+
+    const generators = { c6: genC6, c7: genC7, c8: genC8, c9: genC9, c10: genC10, adult: genAdult };
+
+    function buildOptions(answer, kind='int'){
+      const opts = new Set([String(answer)]);
+      const nudge = ()=> {
+        let delta;
+        if (kind==='dec1'){
+          delta = (rand(1,9)/10) * (Math.random()<0.5?-1:1);
+          return +(Math.round((answer+delta)*10)/10).toFixed(1);
+        }
+        const base = Math.max(1, Math.round(Math.abs(answer)*0.1));
+        delta = choice([1,2,3,4,5, base, base+1]) * (Math.random()<0.5?-1:1);
+        let val = answer + delta;
+        if (val===answer) val += (delta>0?1:-1);
+        return val;
+      };
+      while (opts.size < 4){
+        const v = nudge();
+        opts.add(String(v));
+      }
+      const arr = Array.from(opts).map(v => (kind==='dec1'? Number(v).toFixed(1): v));
+      return shuffleArr(arr);
+    }
+
+    function initCoverageQueue(){ coverageQueue = shuffleArr(allLevels.slice()); }
+    function chooseLevelForNext(){ return coverageQueue.length ? coverageQueue[coverageQueue.length-1] : preferred; }
+    function consumeCoverageIfUsed(levelUsed){
+      if (coverageQueue.length && coverageQueue[coverageQueue.length - 1] === levelUsed){
+        coverageQueue.pop();
+      }
+    }
+    function updateNowTag(levelUsed){ nowTag.textContent = `Now: ${labels[levelUsed]}`; }
+
+    function mqStartGame(){
+      document.documentElement.requestFullscreen?.().catch(()=>{});
+      preferred = levelStart.value;
+      level.value = preferred;
+      mqScore = 0; mqCount = 0; mqLock = false;
+      scoreEl.textContent = mqScore; countEl.textContent = mqCount;
+      initCoverageQueue();
+      show(mqGame);
+      nextQuestion();
+    }
+
+    function mqRestartGame(){
+      mqScore = 0; mqCount = 0; mqLock=false;
+      scoreEl.textContent = mqScore; countEl.textContent = mqCount;
+      initCoverageQueue();
+      nextQuestion();
+    }
+
+    function nextQuestion(){
+      const lvl = chooseLevelForNext();
+      const gen = generators[lvl] || generators.c6;
+      const {text, answer, kind} = gen();
+      qEl.textContent = text;
+      updateNowTag(lvl);
+      const options = buildOptions(answer, kind);
+      renderOptions(options, answer, kind, lvl);
+      countEl.textContent = ++mqCount;
+    }
+
+    function renderOptions(options, answer, kind, lvl){
+      optsEl.innerHTML = '';
+      options.forEach(val => {
+        const btn = document.createElement('button');
+        btn.className = 'mq-opt';
+        btn.type = 'button';
+        btn.textContent = val;
+        btn.ontouchstart = e => e.preventDefault();
+        btn.addEventListener('click', () => handlePick(btn, val, answer, kind, lvl), {passive:true});
+        optsEl.appendChild(btn);
+      });
+    }
+
+    function eq(a, b, kind){ return kind==='dec1' ? Math.abs(parseFloat(a)-parseFloat(b))<0.05 : Number(a)===Number(b); }
+
+    function handlePick(btn, val, answer, kind, lvl){
+      if (mqLock) return;
+      mqLock = true;
+      const correct = eq(val, answer, kind);
+      btn.classList.add(correct ? 'correct' : 'wrong');
+      if (correct){ mqScore++; scoreEl.textContent = mqScore; vibrate(25); }
+      else { vibrate(60); [...optsEl.children].forEach(b=>{ if (eq(b.textContent, answer, kind)) b.classList.add('correct'); }); }
+
+      consumeCoverageIfUsed(lvl);
+      setTimeout(()=>{ mqLock=false; nextQuestion(); }, correct ? 550 : 900);
+    }
+
+    mqPlay.addEventListener('click', mqStartGame);
+    mqRestart.addEventListener('click', mqRestartGame);
+    level.addEventListener('change', e => { preferred = e.target.value; });
+
+    mqBack.addEventListener('click', () => show(scrMenu));
+    mqBackInGame.addEventListener('click', () => show(scrMenu));
+
+    // Prevent pull-to-refresh during active game screens
+    document.addEventListener('touchmove', (e) => {
+      if (memGame.classList.contains('show') || mqGame.classList.contains('show')) e.preventDefault();
+    }, { passive: false });
+  </script>
+</body>
+</html>
