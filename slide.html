@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>History Explorer – Timeline Shuffle (Class 6)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#38bdf8">
+<style>
+  :root{
+    --bg:#0f172a; --card:#111827; --panel:#0b1222; --muted:#94a3b8; --text:#e5e7eb;
+    --accent:#38bdf8; --good:#22c55e; --bad:#ef4444; --warn:#f59e0b; --shadow:0 10px 24px rgba(0,0,0,.28);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{margin:0;background:
+      radial-gradient(1000px 500px at -10% -10%, #16233b 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 0%, #132033 0%, transparent 60%),
+      linear-gradient(180deg, #0b1120, #0b1222);
+    color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    display:flex; align-items:center; justify-content:center; padding:12px}
+  .app{width:min(100%, 760px); display:grid; gap:12px}
+  header{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center}
+  h1{margin:0; font-size:20px; color:var(--accent)}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+  button{
+    background:#0b1222; color:var(--text); border:1px solid #1f2937; padding:10px 12px;
+    border-radius:12px; font-weight:700; cursor:pointer; box-shadow:var(--shadow);
+    transition:.2s transform ease, .2s background-color ease}
+  button:active{transform:scale(.98)}
+  .btn-primary{background:linear-gradient(135deg,#38bdf8,#60a5fa); border-color:transparent; color:#0b1120}
+  .btn-good{background:linear-gradient(135deg,#22c55e,#34d399); border-color:transparent; color:#0b1120}
+  .hud{display:flex; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:14px}
+  .card{
+    background:var(--card); border:1px solid #1f2937; border-radius:16px; padding:14px;
+    box-shadow:var(--shadow)
+  }
+  .list{display:grid; gap:10px}
+  .item{
+    background:#0b1222; border:1px solid #1f2937; border-radius:14px; padding:12px;
+    display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center
+  }
+  .handle{font-weight:900; color:#94a3b8; user-select:none}
+  .label{font-weight:700}
+  .tag{font-size:12px; color:#cbd5e1; background:#0d172a; border-radius:8px; padding:3px 8px}
+  .item.sel{outline:2px solid #a5b4fc}
+  .item.correct{border-color:#14532d; background:linear-gradient(180deg,#0a1512,#0b1222)}
+  .item.wrong{border-color:#3f1a1a; background:linear-gradient(180deg,#1a0d0d,#0b1222)}
+  .note{font-size:13px; color:#cbd5e1}
+  .result{display:none; background:#0b1222; border:1px solid #1f2937; border-radius:16px; padding:14px}
+  .result.show{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🧭 History Explorer — Timeline Shuffle</h1>
+    <div class="controls">
+      <button id="shuffle" class="btn-primary">Shuffle</button>
+      <button id="check" class="btn-good">Check Order</button>
+      <button id="reveal">Show Answer</button>
+      <button id="reset">Reset</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="hud">
+      <span><b>Goal:</b> Arrange events from <i>oldest</i> (BCE) to <i>newest</i> (CE).</span>
+      <span id="score">Score: 0%</span>
+      <span id="timer">Time: 90s</span>
+    </div>
+    <div class="note">BCE dates count backward (e.g., 7000 BCE is earlier than 2600 BCE). Tap one card, then tap another to <b>swap</b>. Works great on phones.</div>
+  </div>
+
+  <div id="list" class="list"></div>
+
+  <div id="explain" class="result"></div>
+
+  <div class="card note">
+    <b>From the chapter “What, Where, How and When?”</b> — We study what happened, where it happened,
+    how we know (sources like manuscripts, inscriptions, coins), and when it happened (BCE/CE).
+  </div>
+</div>
+
+<script>
+/* ===== Dataset (8 events) =====
+   Years: negative = BCE, positive = CE
+   These are standard textbook ranges; years here use a reasonable central value to score order only. */
+const EVENTS = [
+  {label:"Early farming at Mehrgarh (NW India/Pakistan)", when:"c. 7000 BCE", year:-7000, tag:"What/Where"},
+  {label:"First cities on the Indus (Harappan civilisation)", when:"c. 2600–1900 BCE", year:-2600, tag:"Where/When"},
+  {label:"Rigveda composed (early Vedic hymns)", when:"c. 1500–1200 BCE", year:-1500, tag:"What/How"},
+  {label:"Mahajanapadas; Magadha rises in the Ganga valley", when:"c. 600 BCE", year:-600, tag:"Where/When"},
+  {label:"Teachings of the Buddha and Mahavira", when:"c. 6th century BCE", year:-520, tag:"What/How"},
+  {label:"Ashoka rules the Mauryan Empire", when:"c. 273–232 BCE", year:-273, tag:"When"},
+  {label:"Beginning of the Common Era", when:"1 CE", year:1, tag:"When (CE starts)"},
+  {label:"Gupta period (classical age)", when:"c. 320–550 CE", year:320, tag:"When"}
+];
+
+// --- State ---
+let order = [];            // indices into EVENTS (current order)
+let selected = null;       // index in 'order' that's selected for swap
+let timer = 90, timerId=null;
+
+// --- DOM ---
+const list = document.getElementById('list');
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const explain = document.getElementById('explain');
+
+// --- Helpers ---
+const $ = s => document.querySelector(s);
+const shuffle = arr => { const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
+const sortedOrder = () => [...EVENTS].sort((a,b)=>a.year-b.year).map(e=>EVENTS.indexOf(e));
+const fmt = p => Math.round(p);
+
+// --- Build UI ---
+function build(){
+  list.innerHTML='';
+  order.forEach((idx,pos)=>{
+    const e = EVENTS[idx];
+    const row = document.createElement('button');
+    row.className = 'item';
+    row.innerHTML = `
+      <div class="handle">≡</div>
+      <div class="label">${e.label}<div class="note">${e.when}</div></div>
+      <div class="tag">${e.tag}</div>
+    `;
+    row.addEventListener('click', ()=>onSelect(pos,row));
+    list.appendChild(row);
+  });
+}
+
+function onSelect(pos, rowEl){
+  // first tap
+  if(selected===null){
+    selected = pos;
+    rowEl.classList.add('sel');
+    return;
+  }
+  // second tap: swap
+  const a = selected, b = pos;
+  if(a!==b){
+    [order[a], order[b]] = [order[b], order[a]];
+    build();
+  } else {
+    // deselect if same
+    $$('.item').forEach(el=>el.classList.remove('sel'));
+  }
+  selected = null;
+}
+
+function $$(s){ return Array.from(document.querySelectorAll(s)); }
+
+function check(){
+  const correct = sortedOrder();
+  // mark rows
+  let good = 0;
+  $$('.item').forEach((el,i)=>{
+    el.classList.remove('correct','wrong','sel');
+    if(order[i]===correct[i]){ el.classList.add('correct'); good++; }
+    else el.classList.add('wrong');
+  });
+  const pct = (good / order.length) * 100;
+  scoreEl.textContent = 'Score: ' + fmt(pct) + '%';
+  if(pct===100) showExplain(true);
+}
+
+function reveal(){
+  order = sortedOrder();
+  build();
+  check();
+  showExplain(true);
+}
+
+function reset(){
+  timer = 90; timerEl.textContent = 'Time: ' + timer + 's';
+  clearInterval(timerId); timerId = setInterval(tick,1000);
+  order = shuffle(EVENTS.map((_,i)=>i));
+  selected=null; scoreEl.textContent='Score: 0%';
+  explain.classList.remove('show'); explain.innerHTML='';
+  build();
+}
+
+function tick(){
+  if(timer<=0){ clearInterval(timerId); timerEl.textContent='Time: 0s'; check(); showExplain(false); return; }
+  timer--; timerEl.textContent='Time: ' + timer + 's';
+}
+
+function showExplain(win){
+  explain.classList.add('show');
+  const rows = sortedOrder().map(i=>{
+    const e = EVENTS[i];
+    return `<li><b>${e.when}:</b> ${e.label}</li>`;
+  }).join('');
+  explain.innerHTML = `
+    <div><b>${win ? 'Perfect! 🏆' : 'Correct order:'}</b></div>
+    <ol style="margin-top:6px">${rows}</ol>
+    <div style="margin-top:8px" class="note">
+      <b>Remember:</b> Historians ask <i>What</i> happened, <i>Where</i> it happened,
+      <i>How</i> we know (sources like manuscripts, inscriptions, coins), and <i>When</i> it happened (BCE/CE).
+    </div>
+  `;
+}
+
+// --- Buttons ---
+$('#shuffle').addEventListener('click', reset);
+$('#check').addEventListener('click', check);
+$('#reveal').addEventListener('click', reveal);
+$('#reset').addEventListener('click', reset);
+
+// --- Init ---
+function init(){
+  order = shuffle(EVENTS.map((_,i)=>i));
+  build();
+  timerId = setInterval(tick,1000);
+}
+init();
+</script>
+</body>
+</html>
