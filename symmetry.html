@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Symmetry Sketch! — VACT Eduturismo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0ea5e9">
+<style>
+  :root{
+    --bg:#0b1120; --panel:#0f172acc; --card:#111827;
+    --text:#e5e7eb; --muted:#94a3b8; --accent:#0ea5e9; --ring:#38bdf8;
+    --good:#22c55e; --warn:#f59e0b; --bad:#ef4444; --shadow:0 10px 24px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:
+      radial-gradient(1000px 500px at -10% -10%, #16233b 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 0%, #132033 0%, transparent 60%),
+      linear-gradient(180deg, #0b1120, #0b1222);
+    color:var(--text); display:flex; align-items:center; justify-content:center; padding:12px;
+  }
+  .app{width:min(100%, 980px); display:grid; gap:12px; grid-template-rows:auto 1fr auto}
+  header{
+    display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;
+  }
+  .brand{display:flex; gap:10px; align-items:center; font-weight:800}
+  .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#60a5fa)}
+  .controls{display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end}
+  select, input[type="number"], button{
+    background:var(--card); border:1px solid #1f2937; color:var(--text);
+    padding:10px 12px; border-radius:12px; box-shadow:var(--shadow); font-weight:700
+  }
+  button{cursor:pointer; border-color:transparent}
+  .btn{transition:.2s transform ease}
+  .btn:active{transform:scale(.98)}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#60a5fa)}
+  .btn-ghost{background:transparent; border:1px solid #1f2937}
+  .btn-danger{background:linear-gradient(135deg,#ef4444,#f97316)}
+  .toolbar{
+    display:flex; flex-wrap:wrap; gap:8px; background:var(--panel);
+    padding:10px; border:1px solid #1f2937; border-radius:16px
+  }
+  .swatch{width:26px;height:26px;border-radius:8px;border:2px solid #0b1120; box-shadow:var(--shadow)}
+  .canvas-wrap{
+    position:relative; border-radius:18px; overflow:hidden; border:1px solid #1f2937; box-shadow:var(--shadow)
+  }
+  canvas{display:block; width:100%; height:68vh; touch-action:none; background:#0a0f1d}
+  .hint{
+    position:absolute; inset:0; pointer-events:none; mix-blend:screen; opacity:.35
+  }
+  .hud{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+    margin-top:6px;
+  }
+  .tile{
+    background:var(--panel); border:1px solid #1f2937; border-radius:14px; padding:10px 12px;
+    display:flex; align-items:center; justify-content:space-between; min-height:46px
+  }
+  .label{font-size:12px;color:var(--muted)} .value{font-weight:800}
+  .overlay{position:absolute; inset:0; display:grid; place-items:center; background:rgba(10,14,24,.5); backdrop-filter: blur(6px);}
+  .panel{background:linear-gradient(180deg,#0b1222,#0d162a); border:1px solid #1f2937; border-radius:20px; padding:18px; width:min(560px,92%)}
+  .panel h2{margin:0 0 10px}
+  footer{color:var(--muted); text-align:center; font-size:13px}
+  @media (min-height: 860px){ canvas{height:72vh} }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="brand"><span class="dot"></span><span>VACT • Symmetry Sketch!</span></div>
+    <div class="controls">
+      <select id="mode" aria-label="Symmetry mode">
+        <option value="vertical">Vertical Mirror</option>
+        <option value="horizontal">Horizontal Mirror</option>
+        <option value="four">4‑Way (V+H)</option>
+        <option value="kaleido" selected>Kaleidoscope (N‑fold)</option>
+      </select>
+      <label class="sr-only" for="folds">Folds</label>
+      <input id="folds" type="number" value="6" min="3" max="8" step="1" aria-label="Kaleidoscope folds">
+      <select id="timerSel" aria-label="Timer">
+        <option value="30">30s</option>
+        <option value="60" selected>60s</option>
+        <option value="0">∞</option>
+      </select>
+      <button id="start" class="btn btn-primary">Start</button>
+      <button id="clear" class="btn btn-ghost">Clear</button>
+      <button id="save" class="btn btn-ghost">Save</button>
+    </div>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Drawing tools">
+    <div class="group" style="display:flex; gap:6px; align-items:center">
+      <button id="undo" class="btn btn-ghost" title="Undo">↶ Undo</button>
+      <button id="redo" class="btn btn-ghost" title="Redo">↷ Redo</button>
+    </div>
+    <div class="group" style="display:flex; gap:6px; align-items:center">
+      <span class="label">Brush</span>
+      <input id="size" type="range" min="2" max="28" value="8">
+      <button id="eraser" class="btn btn-ghost" title="Eraser">Eraser</button>
+    </div>
+    <div class="group" style="display:flex; gap:6px; align-items:center">
+      <span class="label">Color</span>
+      <button class="swatch" data-color="#ffffff" style="background:#ffffff"></button>
+      <button class="swatch" data-color="#60a5fa" style="background:#60a5fa"></button>
+      <button class="swatch" data-color="#34d399" style="background:#34d399"></button>
+      <button class="swatch" data-color="#fbbf24" style="background:#fbbf24"></button>
+      <button class="swatch" data-color="#f472b6" style="background:#f472b6"></button>
+      <button class="swatch" data-color="#94a3b8" style="background:#94a3b8"></button>
+      <button class="swatch" data-color="#0a0f1d" style="background:#0a0f1d" title="Background color"></button>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <canvas id="hint" class="hint"></canvas>
+
+    <div id="intro" class="overlay">
+      <div class="panel">
+        <h2>Draw with symmetry!</h2>
+        <p>Pick a mirror or kaleidoscope mode, then draw. When the timer ends, we’ll score how symmetric your artwork is.</p>
+        <ul>
+          <li><b>Mirror</b>: everything you draw is reflected.</li>
+          <li><b>4‑Way</b>: vertical + horizontal reflection.</li>
+          <li><b>Kaleidoscope</b>: repeated by rotation (3–8 folds).</li>
+        </ul>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="introStart" class="btn btn-primary">Start Now</button>
+          <button id="how" class="btn btn-ghost">How scoring works</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="howPanel" class="overlay" hidden>
+      <div class="panel">
+        <h2>Scoring</h2>
+        <p>Your final score compares your drawing against its perfect symmetric version. More overlap → higher score.</p>
+        <p><b>Tip:</b> keep strokes close to the axes/center for higher symmetry. Smooth curves beat tiny jittery lines.</p>
+        <div><button id="closeHow" class="btn btn-primary">Got it</button></div>
+      </div>
+    </div>
+
+    <div id="result" class="overlay" hidden>
+      <div class="panel">
+        <h2>Nice work! 🏆</h2>
+        <p><b>Symmetry Score:</b> <span id="scoreVal">0</span>%</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="again" class="btn btn-primary">Draw Again</button>
+          <button id="keep" class="btn btn-ghost">Keep Drawing</button>
+          <button id="share" class="btn btn-danger">Share</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <div class="tile"><span class="label">Timer</span><span class="value" id="time">60</span></div>
+    <div class="tile"><span class="label">Mode</span><span class="value" id="modeVal">Kaleido ×6</span></div>
+    <div class="tile"><span class="label">Brush</span><span class="value" id="brushVal">8 px</span></div>
+    <div class="tile"><span class="label">Best</span><span class="value" id="best">0%</span></div>
+  </div>
+
+  <footer>
+    Tip: Two‑finger pinch to zoom (platform zoom). For steady lines, draw slower and lift your finger less often.
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const c = $('#c'), h = $('#hint');
+  const ctx = c.getContext('2d', { willReadFrequently:true });
+  const htx = h.getContext('2d');
+
+  let W=0,H=0, DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  function resize(){
+    const rect = c.getBoundingClientRect();
+    W = Math.floor(rect.width * DPR);
+    H = Math.floor(rect.height * DPR);
+    c.width = W; c.height = H;
+    h.width = W; h.height = H;
+    drawHint();
+    redrawAll();
+  }
+  window.addEventListener('resize', () => { resize(); });
+
+  // State
+  let drawing = false, erasing = false;
+  let color = '#ffffff', size = 8;
+  let mode = 'kaleido', folds = 6;
+  let strokes = [];      // each: {pts:[{x,y}], color, size, mode, folds, erase}
+  let redoStack = [];
+  let timer = 60, timerId = null, running = false;
+  let best = +localStorage.getItem('vact-symmetry-best') || 0;
+  $('#best').textContent = best + '%';
+
+  // Controls
+  $('#mode').addEventListener('change', e => { mode = e.target.value; updateHUD(); drawHint(); });
+  $('#folds').addEventListener('input', e => { folds = clamp(3,8, +e.target.value||6); e.target.value = folds; updateHUD(); drawHint(); });
+  $('#size').addEventListener('input', e => { size = +e.target.value; $('#brushVal').textContent = size + ' px'; });
+  $('#eraser').addEventListener('click', () => { erasing = !erasing; flash(`Eraser ${erasing?'ON':'OFF'}`); });
+  $('#clear').addEventListener('click', clearCanvas);
+  $('#save').addEventListener('click', savePNG);
+  $('#undo').addEventListener('click', undo);
+  $('#redo').addEventListener('click', redo);
+
+  $('#timerSel').addEventListener('change', e => { timer = +e.target.value; $('#time').textContent = timer===0?'∞':timer; });
+
+  $('#start').addEventListener('click', startSession);
+  $('#introStart').addEventListener('click', startSession);
+  $('#how').addEventListener('click', ()=> $('#howPanel').hidden = false);
+  $('#closeHow').addEventListener('click', ()=> $('#howPanel').hidden = true);
+  $('#again').addEventListener('click', () => { $('#result').hidden=true; startSession(); });
+  $('#keep').addEventListener('click', () => { $('#result').hidden=true; running=false; stopTimer(); });
+  $('#share').addEventListener('click', async () => {
+    const text = `I scored ${lastScore}% on Symmetry Sketch! Can you beat me?`;
+    try{
+      if(navigator.share) await navigator.share({title:'Symmetry Sketch! — VACT', text});
+      else { await navigator.clipboard.writeText(text); alert('Copied to clipboard.'); }
+    }catch{}
+  });
+
+  $$('.swatch').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      color = b.dataset.color;
+      flash('Color set');
+    })
+  });
+
+  function $(all){ return document.querySelector(all) }
+  function $$(all){ return Array.from(document.querySelectorAll(all)) }
+  function clamp(a,b,x){ return Math.max(a, Math.min(b,x)) }
+
+  // Drawing input
+  c.addEventListener('pointerdown', (e)=>{
+    e.preventDefault(); c.setPointerCapture(e.pointerId);
+    drawing = true; redoStack.length = 0;
+    const pt = getPos(e);
+    addPoint(pt.x, pt.y, true);
+  }, {passive:false});
+  c.addEventListener('pointermove', (e)=>{
+    if(!drawing) return;
+    const pt = getPos(e);
+    addPoint(pt.x, pt.y, false);
+  });
+  window.addEventListener('pointerup', (e)=>{
+    if(!drawing) return;
+    drawing = false;
+    // finish stroke
+    if(curr){ strokes.push(curr); curr=null; }
+  });
+
+  function getPos(e){
+    const r = c.getBoundingClientRect();
+    return { x:(e.clientX - r.left) * DPR, y:(e.clientY - r.top) * DPR };
+  }
+
+  let curr = null;
+  function addPoint(x,y, start=false){
+    if(!curr){
+      curr = { pts:[], color, size, mode, folds, erase: erasing };
+    }
+    curr.pts.push({x,y});
+    // draw segment
+    drawSegment(curr, start);
+  }
+
+  function drawSegment(st, start){
+    const line = (x1,y1,x2,y2, col, w, erase=false)=>{
+      ctx.save();
+      ctx.globalCompositeOperation = erase ? 'destination-out' : 'source-over';
+      ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      ctx.restore();
+    };
+    const pts = st.pts;
+    if(pts.length < 2 && !start) return;
+    const i = Math.max(1, pts.length-1);
+    const a = pts[i-1], b = pts[i];
+
+    // draw in selected symmetry
+    if(st.mode === 'vertical' || st.mode==='horizontal' || st.mode==='four'){
+      const midX = W/2, midY = H/2;
+      const segs = [];
+      const push = (p1,p2)=> segs.push([p1.x,p1.y,p2.x,p2.y]);
+      push(a,b);
+      if(st.mode==='vertical' || st.mode==='four'){
+        push({x:mirrorX(a.x,midX), y:a.y}, {x:mirrorX(b.x,midX), y:b.y});
+      }
+      if(st.mode==='horizontal' || st.mode==='four'){
+        push({x:a.x, y:mirrorY(a.y,midY)}, {x:b.x, y:mirrorY(b.y,midY)});
+      }
+      if(st.mode==='four'){
+        push({x:mirrorX(a.x,midX), y:mirrorY(a.y,midY)}, {x:mirrorX(b.x,midX), y:mirrorY(b.y,midY)});
+      }
+      for(const s of segs) line(s[0],s[1],s[2],s[3], st.color, st.size, st.erase);
+    } else {
+      // kaleidoscope: rotate around center
+      const cx=W/2, cy=H/2;
+      const ang = Math.PI*2 / st.folds;
+      for(let k=0;k<st.folds;k++){
+        const ra = rotate(a,cx,cy, ang*k);
+        const rb = rotate(b,cx,cy, ang*k);
+        line(ra.x,ra.y, rb.x,rb.y, st.color, st.size, st.erase);
+      }
+    }
+  }
+
+  function rotate(p,cx,cy,theta){
+    const dx = p.x - cx, dy = p.y - cy;
+    const ct = Math.cos(theta), st = Math.sin(theta);
+    return { x: cx + dx*ct - dy*st, y: cy + dx*st + dy*ct };
+  }
+  const mirrorX=(x,m)=> m-(x-m);
+  const mirrorY=(y,m)=> m-(y-m);
+
+  function redrawAll(){
+    ctx.clearRect(0,0,W,H);
+    for(const s of strokes){
+      for(let i=1;i<s.pts.length;i++){
+        const a=s.pts[i-1], b=s.pts[i];
+        drawSegment({ ...s, pts:[a,b] }, false);
+      }
+    }
+  }
+
+  function clearCanvas(){
+    strokes.length = 0; redoStack.length = 0; curr=null;
+    ctx.clearRect(0,0,W,H);
+  }
+
+  function undo(){
+    if(strokes.length===0) return;
+    redoStack.push(strokes.pop());
+    redrawAll();
+  }
+  function redo(){
+    if(redoStack.length===0) return;
+    strokes.push(redoStack.pop());
+    redrawAll();
+  }
+
+  function savePNG(){
+    // export at screen DPI to keep size modest on mobile
+    const url = c.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url; a.download = 'symmetry-sketch.png';
+    a.click();
+  }
+
+  // Hint grid/axes
+  function drawHint(){
+    htx.clearRect(0,0,W,H);
+    htx.save();
+    htx.strokeStyle = 'rgba(99,102,241,.6)';
+    htx.lineWidth = 1*DPR;
+    htx.setLineDash([6*DPR,6*DPR]);
+    const midX=W/2, midY=H/2;
+    if(mode==='vertical' || mode==='four'){ lineH(midX,0,midX,H); }
+    if(mode==='horizontal' || mode==='four'){ lineV(0,midY,W,midY); }
+    if(mode==='kaleido'){
+      const cx=midX, cy=midY, n=folds, step = Math.PI*2/n;
+      for(let k=0;k<n;k++){
+        const a = step*k;
+        const x2 = cx + Math.cos(a)*Math.min(W,H);
+        const y2 = cy + Math.sin(a)*Math.min(W,H);
+        line(cx,cy,x2,y2);
+      }
+    }
+    htx.restore();
+    function line(x1,y1,x2,y2){ htx.beginPath(); htx.moveTo(x1,y1); htx.lineTo(x2,y2); htx.stroke(); }
+    function lineH(x1,y1,x2,y2){ line(x1,y1,x2,y2); }
+    function lineV(x1,y1,x2,y2){ line(x1,y1,x2,y2); }
+  }
+
+  // Session & scoring
+  let lastScore = 0;
+  function startSession(){
+    running = true; redoStack.length=0; curr=null;
+    clearCanvas();
+    $('#intro').hidden = true; $('#howPanel').hidden = true; $('#result').hidden = true;
+    if(timer>0){
+      let t = timer;
+      $('#time').textContent = t;
+      stopTimer();
+      timerId = setInterval(()=>{
+        if(!running) return;
+        t = Math.max(0, t-1);
+        $('#time').textContent = t;
+        if(t<=0){ stopTimer(); running=false; doScore(); }
+      },1000);
+    }else{
+      $('#time').textContent = '∞';
+    }
+    vibrate(15);
+  }
+  function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+
+  function doScore(){
+    // Compare canvas with its perfectly symmetrized version
+    const perfect = symmetrizeSnapshot();
+    const score = overlapPercent(c, perfect);
+    lastScore = Math.round(score);
+    $('#scoreVal').textContent = lastScore;
+    if(lastScore > best){
+      best = lastScore;
+      localStorage.setItem('vact-symmetry-best', String(best));
+      $('#best').textContent = best + '%';
+    }
+    $('#result').hidden = false;
+  }
+
+  function symmetrizeSnapshot(){
+    // Create an offscreen canvas that draws the mirrored/rotated copies of the current drawing
+    const off = document.createElement('canvas');
+    off.width=W; off.height=H;
+    const ox = off.getContext('2d');
+    ox.drawImage(c,0,0); // base
+
+    if(mode==='vertical' || mode==='horizontal' || mode==='four'){
+      const midX=W/2, midY=H/2;
+      if(mode==='vertical' || mode==='four'){
+        ox.save();
+        ox.translate(W,0); ox.scale(-1,1);
+        ox.globalCompositeOperation='lighten';
+        ox.drawImage(c,0,0);
+        ox.restore();
+      }
+      if(mode==='horizontal' || mode==='four'){
+        ox.save();
+        ox.translate(0,H); ox.scale(1,-1);
+        ox.globalCompositeOperation='lighten';
+        ox.drawImage(c,0,0);
+        ox.restore();
+      }
+    } else {
+      const cx=W/2, cy=H/2, step = Math.PI*2/folds;
+      for(let k=1;k<folds;k++){
+        ox.save();
+        ox.translate(cx,cy);
+        ox.rotate(step*k);
+        ox.translate(-cx,-cy);
+        ox.globalCompositeOperation='lighten';
+        ox.drawImage(c,0,0);
+        ox.restore();
+      }
+    }
+    return off;
+  }
+
+  function overlapPercent(aCanvas, bCanvas){
+    const a = aCanvas.getContext('2d').getImageData(0,0,W,H).data;
+    const b = bCanvas.getContext('2d').getImageData(0,0,W,H).data;
+    let same=0, total=0;
+    for(let i=0;i<a.length;i+=4){
+      // consider pixel "inked" if alpha > 10
+      const aOn = a[i+3] > 10;
+      const bOn = b[i+3] > 10;
+      if(aOn || bOn){ total++; if(aOn && bOn) same++; }
+    }
+    if(total===0) return 0;
+    return (same/total)*100;
+  }
+
+  function updateHUD(){
+    let label = '';
+    if(mode==='vertical') label='Mirror V';
+    else if(mode==='horizontal') label='Mirror H';
+    else if(mode==='four') label='4‑Way';
+    else label=`Kaleido ×${folds}`;
+    $('#modeVal').textContent = label;
+  }
+
+  function vibrate(ms=25){ if(navigator.vibrate) navigator.vibrate(ms); }
+  function flash(text){
+    // small haptic + console style toast
+    vibrate(10);
+  }
+
+  // Init
+  function init(){
+    resize();
+    updateHUD();
+    $('#time').textContent = timer;
+  }
+  init();
+
+})();
+</script>
+</body>
+</html>
