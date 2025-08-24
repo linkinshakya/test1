@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>FocusFeed — Do More, Scroll Less</title>
+  <style>
+    :root{
+      --bg1:#0f172a; /* slate-900 */
+      --bg2:#111827; /* gray-900 */
+      --card:#111827;
+      --ink:#e5e7eb; /* gray-200 */
+      --muted:#9ca3af; /* gray-400 */
+      --accent:#22c55e; /* green-500 */
+      --accent-2:#3b82f6; /* blue-500 */
+      --warn:#f59e0b; /* amber-500 */
+      --danger:#ef4444; /* red-500 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    html,body{height:100%;}
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      color:var(--ink); background: radial-gradient(1200px 900px at 70% -10%, #1e293b 0%, var(--bg1) 35%, var(--bg2) 100%);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .app{min-height:100svh; display:flex; flex-direction:column; gap:10px; padding: env(safe-area-inset-top) 14px env(safe-area-inset-bottom);}
+    .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:10px}
+    .brand{display:flex; align-items:center; gap:10px}
+    .logo{width:38px; height:38px; border-radius:12px; background: conic-gradient(from 0deg at 50% 50%, #22c55e, #3b82f6, #f59e0b, #22c55e); box-shadow:var(--shadow)}
+    .title{font-weight:700; letter-spacing:.2px}
+    .hud{display:flex; gap:10px; align-items:center}
+    .chip{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.06); box-shadow:var(--shadow); font-weight:600}
+    .chip small{color:var(--muted); font-weight:600}
+    .ring{position:relative; width:46px; height:46px}
+    .ring svg{transform:rotate(-90deg)}
+    .ring .pct{position:absolute; inset:0; display:grid; place-items:center; font-size:11px; color:#d1fae5; font-weight:800}
+
+    .stack{position:relative; flex:1; display:grid; place-items:center; overflow:hidden}
+    .card{position:absolute; width:min(680px, 94vw); max-height:74svh; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04)); border:1px solid rgba(255,255,255,.07); box-shadow: var(--shadow);
+      border-radius: var(--radius); padding:16px; backdrop-filter: blur(10px); display:flex; flex-direction:column; gap:12px}
+    .card.enter{animation: pop .22s ease-out both}
+    @keyframes pop{from{transform:scale(.96); opacity:.0} to{transform:scale(1); opacity:1}}
+    .card.dragging{transition:none}
+    .badge{font-size:12px; color:#93c5fd; background:rgba(59,130,246,.15); border:1px solid rgba(59,130,246,.3); padding:6px 10px; border-radius:999px; width:max-content}
+    .card h2{margin:0; font-size: clamp(18px, 3.5vw, 26px)}
+    .meta{display:flex; gap:10px; align-items:center; color:var(--muted); font-size:13px}
+    .content{flex:1; overflow:auto; padding:4px; display:grid; gap:10px}
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    button{appearance:none; border:1px solid rgba(255,255,255,.14); color:var(--ink); background:rgba(255,255,255,.07);
+      padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer}
+    button.primary{background:linear-gradient(90deg, rgba(34,197,94,.9), rgba(59,130,246,.9)); border-color:transparent}
+    button.warn{background:rgba(245,158,11,.15); border-color:rgba(245,158,11,.4)}
+    button.ghost{background:transparent}
+    .grid{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px}
+    .option{padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); cursor:pointer; font-weight:700; text-align:center}
+    .option.correct{outline:2px solid var(--accent)}
+    .option.wrong{outline:2px solid var(--danger)}
+
+    .settings{display:flex; align-items:center; gap:8px}
+    select{padding:8px 10px; border-radius:10px; background:rgba(255,255,255,.07); color:var(--ink); border:1px solid rgba(255,255,255,.18)}
+
+    .footer{display:flex; justify-content:space-between; align-items:center; padding:8px 2px; color:var(--muted)}
+
+    .toast{position:fixed; left:50%; bottom:18px; translate:-50% 0; background:rgba(14,159,110,.9); color:#ecfeff; padding:12px 16px; border-radius:12px; box-shadow:var(--shadow); font-weight:800; z-index:10; opacity:0; pointer-events:none; transition:opacity .18s ease, translate .18s ease}
+    .toast.show{opacity:1; translate:-50% -8px}
+
+    .modal{position:fixed; inset:0; display:none; background:rgba(0,0,0,.5); backdrop-filter: blur(2px); place-items:center; z-index:20}
+    .modal.open{display:grid}
+    .modal .sheet{width:min(640px,92vw); background:var(--card); border-radius:var(--radius); border:1px solid rgba(255,255,255,.12); box-shadow:var(--shadow); padding:16px}
+
+    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:2px 6px; border:1px solid rgba(255,255,255,.2); border-bottom-width:3px; border-radius:6px; background:rgba(255,255,255,.06); font-size:12px}
+
+    /* Scrollbar thin */
+    ::-webkit-scrollbar{height:8px;width:8px}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18); border-radius:999px}
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="title">FocusFeed</div>
+          <div style="color:var(--muted); font-size:12px">Addictive micro‑tasks for real progress</div>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="chip" id="xpChip">⭐ <span id="xp">0</span> <small>XP</small></div>
+        <div class="chip">🔥 <span id="streak">0</span> <small>streak</small></div>
+        <div class="ring" title="Daily goal">
+          <svg viewBox="0 0 36 36" width="46" height="46">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1">
+                <stop offset="0%" stop-color="#22c55e"/>
+                <stop offset="100%" stop-color="#3b82f6"/>
+              </linearGradient>
+            </defs>
+            <path d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4" />
+            <path id="ringArc" d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32" fill="none" stroke="url(#g)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100"/>
+          </svg>
+          <div class="pct" id="goalPct">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack" id="stack">
+      <!-- Cards will be injected here -->
+    </div>
+
+    <div class="footer">
+      <div class="settings">
+        <span class="kbd">Mode</span>
+        <select id="difficulty">
+          <option>Chill</option>
+          <option selected>Standard</option>
+          <option>Hard</option>
+        </select>
+        <button class="ghost" id="howBtn">How it works</button>
+      </div>
+      <div>
+        <button id="newBtn" class="primary">I'm bored → Give me a task</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal" id="helpModal" aria-modal="true" role="dialog">
+    <div class="sheet">
+      <h3 style="margin:0 0 8px 0">How FocusFeed works</h3>
+      <ol style="color:var(--muted); display:grid; gap:6px; padding-left:18px">
+        <li>Tap <b>"I'm bored"</b> to get an instant micro‑task (quiz, focus sprint, typing burst, breathe cycle).</li>
+        <li>Complete tasks to earn <b>XP</b>, build your <b>streak</b>, and reach your <b>daily goal</b>.</li>
+        <li>Swipe a card <b>left</b> to skip. Complete to swipe <b>right</b>. Long‑press anywhere to peek the next task.</li>
+        <li>Everything is stored locally on your device — zero accounts, zero tracking.</li>
+      </ol>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+        <button id="resetBtn" class="warn">Reset progress</button>
+        <button id="closeHelp">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ===== Utilities =====
+  const $ = (sel, el=document) => el.querySelector(sel);
+  const el = (tag, cls, html) => { const n=document.createElement(tag); if(cls) n.className=cls; if(html!=null) n.innerHTML=html; return n };
+  const storage = {
+    get:k=>{try{return JSON.parse(localStorage.getItem('ff_'+k))}catch{return null}},
+    set:(k,v)=>localStorage.setItem('ff_'+k, JSON.stringify(v))
+  };
+  const todayKey = () => new Date().toLocaleDateString();
+  const vibrate = ms => { if(navigator.vibrate) navigator.vibrate(ms) };
+  let audioCtx;
+  function beep(freq=720, dur=80){
+    try{ audioCtx = audioCtx|| new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(); const g=audioCtx.createGain();
+    o.frequency.value=freq; o.type='triangle'; o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(.0001, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.2, audioCtx.currentTime+.01);
+    o.start(); g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime+dur/1000); o.stop(audioCtx.currentTime+dur/1000) }catch(e){}
+  }
+  function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1400) }
+
+  // ===== State =====
+  const state = {
+    xp: storage.get('xp')??0,
+    streak: storage.get('streak')??0,
+    lastDay: storage.get('lastDay')??null,
+    dailyXp: storage.get('dailyXp')??0,
+    difficulty: storage.get('difficulty')??'Standard',
+    completedToday: storage.get('completedToday')??0,
+    achievements: storage.get('achievements')??{},
+  };
+  const DAILY_GOAL = 120; // XP
+  function save(){
+    storage.set('xp', state.xp);
+    storage.set('streak', state.streak);
+    storage.set('lastDay', state.lastDay);
+    storage.set('dailyXp', state.dailyXp);
+    storage.set('difficulty', state.difficulty);
+    storage.set('completedToday', state.completedToday);
+    storage.set('achievements', state.achievements);
+  }
+  function updateHUD(){
+    $('#xp').textContent = state.xp;
+    $('#streak').textContent = state.streak;
+    const pct = Math.min(100, Math.round((state.dailyXp/DAILY_GOAL)*100));
+    const dash = `${(pct/100)*100} ${100-((pct/100)*100)}`;
+    $('#ringArc').setAttribute('stroke-dasharray', dash);
+    $('#goalPct').textContent = pct+"%";
+  }
+  function onNewDay(){
+    const today = todayKey();
+    if(state.lastDay === today) return; // same day
+    if(state.lastDay){
+      // if yesterday had progress, keep streak; else reset
+      const prev = new Date(state.lastDay);
+      const yday = new Date(); yday.setDate(yday.getDate()-1);
+      const madeProgress = state.completedToday>0 || state.dailyXp>0;
+      if(prev.toDateString() === yday.toDateString() && madeProgress){ state.streak++; }
+      else if(state.lastDay!==today){ state.streak = 0; }
+    }
+    state.lastDay = today;
+    state.dailyXp = 0; state.completedToday = 0; save();
+  }
+
+  // ===== Task Factory =====
+  const dict = [
+    ['abate','to become less intense'],['ardent','very enthusiastic'],['bolster','to support or strengthen'],['candid','truthful and straightforward'],['deference','respect and esteem'],['elicit','to draw out'],['futile','incapable of producing result'],['lucid','clear and easy to understand'],['meticulous','very careful and precise'],['prudent','acting with care for the future'],['succinct','brief and clearly expressed'],['tenuous','very weak or slight'],['ubiquitous','present everywhere'],['venerate','to respect deeply'],['wan','pale, weak'],['yoke','to join together'],['zeal','great energy or enthusiasm']
+  ];
+  const quotes = [
+    'Tiny progress beats tiny distractions.',
+    'Focus is a muscle; feed it reps.',
+    'Two minutes now saves twenty later.',
+    'Done is a magnet for momentum.',
+  ];
+  const tasks = {
+    math(){
+      const hard = state.difficulty==='Hard';
+      const chill = state.difficulty==='Chill';
+      const a = hard? rand(12,99) : chill? rand(3,19) : rand(9,49);
+      const b = hard? rand(12,99) : chill? rand(3,19) : rand(9,49);
+      const ops = ['+','−','×'];
+      const op = hard? ops[rand(0,2)] : ops[rand(0,1)];
+      const ans = op==='+'? a+b : op==='−'? a-b : a*b;
+      const correct = ans;
+      const opts = shuffle([correct, correct+rand(-9,9), correct+rand(-11,11), correct+rand(-6,6)]).slice(0,4);
+      return {type:'math', title:'Mental Math', meta:`${op==='×'?'Multiplication':'Quick arithmetic'}`, a,b,op, correct, opts}
+    },
+    vocab(){
+      const [w,def] = dict[rand(0,dict.length-1)];
+      const wrong = shuffle(dict.filter(x=>x[0]!==w).map(x=>x[1])).slice(0,3);
+      const opts = shuffle([def, ...wrong]);
+      return {type:'vocab', title:'Vocabulary Boost', meta:w, word:w, def, opts}
+    },
+    typing(){
+      const text = quotes[rand(0,quotes.length-1)];
+      return {type:'typing', title:'Type Burst', meta:'Type without errors', text}
+    },
+    focus(){
+      return {type:'focus', title:'Focus Sprint', meta:'Pick a short timer (1–5 min) and stick with it'}
+    },
+    breathe(){
+      return {type:'breathe', title:'Breathe 4‑7‑8', meta:'Relax: inhale 4 • hold 7 • exhale 8 (3 cycles)'}
+    },
+  };
+  const taskWeights = [ ['math',3], ['vocab',3], ['typing',2], ['focus',2], ['breathe',1] ];
+  function nextTask(){
+    const pool=[]; taskWeights.forEach(([k,w])=>{ for(let i=0;i<w;i++) pool.push(k) });
+    const type = pool[rand(0,pool.length-1)];
+    return tasks[type]();
+  }
+
+  // ===== Renderers =====
+  const stack = $('#stack');
+  function injectCard(task){
+    const card = el('section','card enter'); card.setAttribute('data-type', task.type);
+    card.innerHTML = `
+      <span class="badge">${task.title}</span>
+      <h2 id="cardTitle">${task.type==='vocab'?('What best defines “'+escapeHTML(task.word)+'”?'):escapeHTML(task.title)}</h2>
+      <div class="meta">${escapeHTML(task.meta)}</div>
+      <div class="content" id="content"></div>
+      <div class="actions" id="actions"></div>
+    `;
+    stack.innerHTML = ''; stack.appendChild(card);
+    enableDrag(card);
+    // build content per type
+    const content = $('#content', card); const actions = $('#actions', card);
+
+    if(task.type==='math'){
+      const q = el('div',null,`<div style="font-size:clamp(28px,8vw,42px); font-weight:900; letter-spacing:.5px;">${task.a} ${task.op} ${task.b} = ?</div>`);
+      content.appendChild(q);
+      const grid = el('div','grid'); content.appendChild(grid);
+      task.opts.forEach(val=>{
+        const o = el('button','option',String(val)); grid.appendChild(o);
+        o.addEventListener('click',()=>{
+          if(o.classList.contains('correct')||o.classList.contains('wrong')) return;
+          if(val===task.correct){ o.classList.add('correct'); correctFlow(10) }
+          else { o.classList.add('wrong'); beep(220,120); vibrate(40) }
+        });
+      });
+      const skip = el('button','ghost','Skip'); actions.appendChild(skip);
+      skip.onclick=()=>skipCard(card);
+    }
+
+    if(task.type==='vocab'){
+      const grid = el('div','grid'); content.appendChild(grid);
+      task.opts.forEach(txt=>{
+        const o = el('button','option',escapeHTML(txt)); grid.appendChild(o);
+        o.addEventListener('click',()=>{
+          if(o.classList.contains('correct')||o.classList.contains('wrong')) return;
+          if(txt===task.def){ o.classList.add('correct'); correctFlow(12) }
+          else { o.classList.add('wrong'); beep(240,120); vibrate(40) }
+        });
+      });
+      const hint = el('div',null,`<small style="color:var(--muted)">Word: <b>${escapeHTML(task.word)}</b></small>`); content.prepend(hint);
+      const skip = el('button','ghost','Skip'); actions.appendChild(skip); skip.onclick=()=>skipCard(card);
+    }
+
+    if(task.type==='typing'){
+      const p = el('p',null,`<span style="color:var(--muted)">Type this exactly:</span><br><b style="font-size:clamp(16px,3.6vw,22px)">${escapeHTML(task.text)}</b>`);
+      const input = el('input'); input.type='text'; input.autocapitalize='off'; input.autocomplete='off'; input.spellcheck=false;
+      input.style.cssText='padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); width:100%';
+      const stats = el('div',null,'');
+      content.append(p,input,stats);
+      let startedAt=null; input.addEventListener('input',()=>{
+        if(!startedAt) startedAt=performance.now();
+        if(input.value===task.text){
+          const ms = Math.max(1, performance.now()-startedAt);
+          const words = task.text.trim().split(/\s+/).length;
+          const wpm = Math.round((words/(ms/60000)));
+          stats.innerHTML = `<b>${wpm} WPM</b> • Nice!`;
+          correctFlow(15 + Math.min(10, Math.floor(wpm/10)));
+        }
+      });
+      input.focus({preventScroll:true});
+      const skip = el('button','ghost','Skip'); actions.appendChild(skip); skip.onclick=()=>skipCard(card);
+    }
+
+    if(task.type==='focus'){
+      const row = el('div','actions');
+      [1,3,5].forEach(min=>{
+        const b = el('button','',`${min} min`); row.appendChild(b);
+        b.onclick=()=>startTimer(min*60);
+      });
+      content.appendChild(row);
+      const timerBox = el('div',null,''); content.appendChild(timerBox);
+      function startTimer(secs){
+        timerBox.innerHTML = '';
+        const ring = el('div','ring'); ring.style.margin='0 auto';
+        ring.innerHTML = `<svg viewBox="0 0 36 36" width="140" height="140"><path d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><path id="tarc" d="M18 2 a 16 16 0 0 1 0 32 a 16 16 0 0 1 0 -32" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100"/></svg><div class="pct" id="ttxt">${fmt(secs)}</div>`;
+        timerBox.appendChild(ring);
+        const start = performance.now(); const end = start + secs*1000; let rAF;
+        const tick=()=>{
+          const now=performance.now(); const left=Math.max(0,end-now); const pct=((secs-(left/1000))/secs)*100; $('#tarc',ring).setAttribute('stroke-dasharray', `${pct} ${100-pct}`); $('#ttxt',ring).textContent=fmt(Math.round(left/1000));
+          if(left>0){ rAF=requestAnimationFrame(tick)} else {
+            cancelAnimationFrame(rAF); vibrate([80,50,80]); beep(880,120); toast('Focus sprint complete +20 XP'); gainXP(20); finishCard(card);
+          }
+        }; rAF=requestAnimationFrame(tick);
+      }
+      const skip = el('button','ghost','Skip'); actions.appendChild(skip); skip.onclick=()=>skipCard(card);
+    }
+
+    if(task.type==='breathe'){
+      const canvas = el('div'); canvas.style.cssText='height:180px; display:grid; place-items:center';
+      const dot = el('div'); dot.style.cssText='width:30px; height:30px; border-radius:999px; background:linear-gradient(90deg,#22c55e,#3b82f6); box-shadow:0 0 40px rgba(59,130,246,.45)';
+      canvas.appendChild(dot); content.appendChild(canvas);
+      const guide = el('div',null,'Inhale'); content.appendChild(guide);
+      const btn = el('button','', 'Start 3 cycles'); actions.appendChild(btn);
+      btn.onclick=()=>start();
+      function phase(label, dur, scale){ return new Promise(res=>{ guide.textContent=label; dot.animate([{transform:`scale(${scale.from})`},{transform:`scale(${scale.to})`}],{duration:dur, fill:'forwards', easing:'ease-in-out'}).onfinish=()=>res(); }); }
+      async function start(){
+        btn.disabled=true; for(let i=0;i<3;i++){ await phase('Inhale (4)', 4000, {from:1,to:1.9}); await phase('Hold (7)', 7000, {from:1.9,to:1.9}); await phase('Exhale (8)', 8000, {from:1.9,to:1}); }
+        toast('Breathing complete +14 XP'); gainXP(14); finishCard(card);
+      }
+      const skip = el('button','ghost','Skip'); actions.appendChild(skip); skip.onclick=()=>skipCard(card);
+    }
+  }
+
+  function fmt(s){ const m=Math.floor(s/60), ss=String(s%60).padStart(2,'0'); return `${m}:${ss}` }
+
+  function correctFlow(baseXP){ beep(760,100); vibrate(20); gainXP(baseXP); toast(`Nice! +${baseXP} XP`); finishCard($('.card')) }
+  function gainXP(n){ state.xp += n; state.dailyXp += n; state.completedToday++; save(); updateHUD(); checkAchievements(); }
+  function finishCard(card){ card.style.transition='transform .18s ease, opacity .18s ease'; card.style.transform='translateX(80px) rotate(2deg)'; card.style.opacity='0'; setTimeout(()=>injectCard(nextTask()), 140) }
+  function skipCard(card){ card.style.transition='transform .18s ease, opacity .18s ease'; card.style.transform='translateX(-120px) rotate(-4deg)'; card.style.opacity='0'; setTimeout(()=>injectCard(nextTask()), 140) }
+
+  function enableDrag(card){
+    let sx=0, sy=0, dx=0, dragging=false; const thresh=70;
+    const onDown=e=>{ dragging=true; sx=e.touches?e.touches[0].clientX:e.clientX; sy=e.touches?e.touches[0].clientY:e.clientY; card.classList.add('dragging') };
+    const onMove=e=>{ if(!dragging) return; const x=e.touches?e.touches[0].clientX:e.clientX; const y=e.touches?e.touches[0].clientY:e.clientY; dx=x-sx; const dy=y-sy; card.style.transform=`translate(${dx}px, ${dy*0.3}px) rotate(${dx*0.06}deg)`; card.style.opacity=String(Math.max(.4, 1-Math.abs(dx)/450)); };
+    const onUp=()=>{ if(!dragging) return; dragging=false; card.classList.remove('dragging'); if(Math.abs(dx)>thresh){ dx>0? finishCard(card): skipCard(card) } else { card.style.transition='transform .12s ease, opacity .12s ease'; card.style.transform='translate(0,0)'; card.style.opacity='1' } dx=0 };
+    card.addEventListener('pointerdown', onDown); window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+    card.addEventListener('touchstart', e=>onDown(e), {passive:true});
+    card.addEventListener('touchmove', e=>onMove(e), {passive:true});
+    card.addEventListener('touchend', onUp);
+    // long press to preview next type
+    let lp; card.addEventListener('pointerdown', ()=>{ lp=setTimeout(()=>toast('Keep going ✨'), 700) }); card.addEventListener('pointerup', ()=>clearTimeout(lp)); card.addEventListener('pointercancel', ()=>clearTimeout(lp));
+  }
+
+  function checkAchievements(){
+    const unlock=(key,label)=>{ if(!state.achievements[key]){ state.achievements[key]=todayKey(); save(); toast('🏆 '+label) } };
+    if(state.dailyXp>=DAILY_GOAL) unlock('daily_goal','Daily goal reached!');
+    if(state.completedToday>=5) unlock('five_tasks','5 tasks today!');
+    if(state.xp>=500) unlock('500xp','500 XP total!');
+  }
+
+  function rand(min,max){ if(max===undefined){max=min; min=0} return Math.floor(Math.random()*(max-min+1))+min }
+  function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]) }
+  function escapeHTML(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
+
+  // ===== Init =====
+  onNewDay(); updateHUD(); injectCard(nextTask());
+
+  $('#difficulty').value = state.difficulty; $('#difficulty').addEventListener('change', e=>{ state.difficulty=e.target.value; save(); toast('Mode: '+state.difficulty) })
+  $('#newBtn').addEventListener('click', ()=>injectCard(nextTask()))
+  $('#howBtn').addEventListener('click', ()=>$('#helpModal').classList.add('open'))
+  $('#closeHelp').addEventListener('click', ()=>$('#helpModal').classList.remove('open'))
+  $('#resetBtn').addEventListener('click', ()=>{ if(confirm('Reset all local progress?')){ Object.assign(state,{xp:0, streak:0, lastDay:null, dailyXp:0, completedToday:0, achievements:{}}); save(); updateHUD(); toast('Progress cleared') } })
+
+  // Wake lock (optional)
+  let wl; if('wakeLock' in navigator){ document.addEventListener('visibilitychange', async()=>{ try{ if(!document.hidden){ wl = await navigator.wakeLock.request('screen') } else if(wl){ wl.release(); wl=null } }catch{}}) }
+  </script>
+</body>
+</html>
