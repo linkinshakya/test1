@@ -5,81 +5,206 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Kaun Banega Samvidhan Gyani — Constitution of India Quiz</title>
   <style>
+    /*
+      Base colours and typography.  
+      Variables are defined on :root so they can be reused throughout the
+      stylesheet. You can easily tweak the palette here.
+    */
     :root{
-      --bg:#0b1020; --panel:#131a2a; --ink:#e8f0ff; --muted:#a5b4d4; --brand:#6be675; --accent:#ffd166; --danger:#ff6b6b;
+      --bg:#0b1020;
+      --panel:#131a2a;
+      --ink:#e8f0ff;
+      --muted:#a5b4d4;
+      --brand:#6be675;
+      --accent:#ffd166;
+      --danger:#ff6b6b;
     }
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;width:100%}
-    body{background:#0b1020;color:var(--ink);font-family:system-ui,Segoe UI,Roboto,sans-serif;font-size:16px;}
+    body{
+      background:var(--bg);
+      color:var(--ink);
+      font-family:system-ui,Segoe UI,Roboto,sans-serif;
+      font-size:16px;
+    }
 
-    .app{padding:12px;max-width:600px;margin:0 auto;}
-    header{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:12px}
-    h1{font-size:22px;line-height:1.3}
-    .badge{font-size:12px;color:var(--muted)}
+    /* Container for the app. Limits maximum width and adds
+       some padding for mobile screens. */
+    .app{
+      padding:12px;
+      max-width:600px;
+      margin:0 auto;
+    }
 
-    .panel{background:var(--panel);border-radius:12px;padding:12px;margin-bottom:12px}
+    .panel{
+      background:var(--panel);
+      border-radius:12px;
+      padding:12px;
+      margin-bottom:12px;
+    }
     .screen{display:none}
     .screen.active{display:block}
 
     .q{font-size:18px;margin-bottom:10px}
     .opts{display:flex;flex-direction:column;gap:10px}
-    .opt{padding:10px;border-radius:8px;background:#1b2238;border:1px solid #2a3a66;color:#dbe6ff;text-align:left;font-size:15px;cursor:pointer}
+    .opt{
+      padding:10px;
+      border-radius:8px;
+      background:#1b2238;
+      border:1px solid #2a3a66;
+      color:#dbe6ff;
+      text-align:left;
+      font-size:15px;
+      cursor:pointer;
+    }
     .opt.selected{border-color:var(--accent)}
     .opt.correct{border-color:#25d366}
     .opt.wrong{border-color:var(--danger)}
 
-    .controls{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-    button{padding:10px;border:none;border-radius:8px;font-size:15px;color:#fff;cursor:pointer}
+    .controls{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:12px;
+    }
+    button{
+      padding:10px;
+      border:none;
+      border-radius:8px;
+      font-size:15px;
+      color:#fff;
+      cursor:pointer;
+    }
     .primary{background:#2a4b9a}
     .success{background:#1e6b3a}
     .danger{background:#6a1e1e}
 
-    .lifelines{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-    .lifelines button{
-      flex:1; min-width:45%;
-      background:#2a4b9a;  /* default blue */
-      color:#fff;
-      border:none;border-radius:8px;padding:10px;font-weight:600;cursor:pointer
+    .lifelines{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:12px;
     }
-    /* optional distinct colors */
-    #ll5050{background:#2a4b9a}
-    #llAudience{background:#00897b}
-    #llPhone{background:#f57c00}
-    #llFlip{background:#6a1b9a}
+    .lifelines button{
+      flex:1;
+      min-width:45%;
+      background:#2a4b9a;
+      color:#fff;
+      border:none;
+      border-radius:8px;
+      padding:10px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    /* Distinct colours for each lifeline. Helps the player
+       quickly identify them. */
+    #ll5050   {background:#2a4b9a}
+    #llAudience {background:#00897b}
+    #llPhone  {background:#f57c00}
+    #llFlip   {background:#6a1b9a}
 
-    #ladder{list-style:none;padding:0;margin-top:12px;font-size:14px;max-height:200px;overflow:auto}
-    #ladder li{display:flex;justify-content:space-between;padding:6px;border-radius:6px;background:#0f1732;margin-bottom:4px}
+    #ladder{
+      list-style:none;
+      padding:0;
+      margin-top:12px;
+      font-size:14px;
+      max-height:200px;
+      overflow:auto;
+    }
+    #ladder li{
+      display:flex;
+      justify-content:space-between;
+      padding:6px;
+      border-radius:6px;
+      background:#0f1732;
+      margin-bottom:4px;
+    }
     #ladder li.current{border:1px solid var(--accent)}
-    #ladder li.safe{color:#6be675}
+    #ladder li.safe{color:var(--brand)}
 
-    .footer{font-size:13px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-    .bar{flex:1;height:6px;border-radius:4px;background:#101936;margin:0 8px;overflow:hidden}
-    .bar > div{height:100%;background:linear-gradient(90deg,#4b7cff,#86b6ff);width:0%}
+    .footer{
+      font-size:13px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-top:10px;
+    }
+    .bar{
+      flex:1;
+      height:6px;
+      border-radius:4px;
+      background:#101936;
+      margin:0 8px;
+      overflow:hidden;
+    }
+    .bar > div{
+      height:100%;
+      background:linear-gradient(90deg,#4b7cff,#86b6ff);
+      width:0%;
+    }
 
-    #toast{position:fixed;left:10px;right:10px;bottom:10px;background:#0e162b;padding:10px;border-radius:8px;font-size:14px;color:#cfe0ff;display:none;text-align:center}
+    #toast{
+      position:fixed;
+      left:10px;
+      right:10px;
+      bottom:10px;
+      background:#0e162b;
+      padding:10px;
+      border-radius:8px;
+      font-size:14px;
+      color:#cfe0ff;
+      display:none;
+      text-align:center;
+    }
     #toast.show{display:block}
 
-    /* --- Splash styles --- */
-    .splash {
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      min-height:100dvh; text-align:center; gap:12px; padding:16px;
+    /* Splash styles for the intro screen */
+    .splash{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      min-height:100dvh;
+      text-align:center;
+      gap:12px;
+      padding:16px;
     }
     .splash img{
-      width:75%; max-width:380px; height:auto; border-radius:12px;
-      box-shadow:0 10px 24px rgba(0,0,0,.35); border:1px solid #2a3a66;
+      width:75%;
+      max-width:380px;
+      height:auto;
+      border-radius:12px;
+      box-shadow:0 10px 24px rgba(0,0,0,.35);
+      border:1px solid #2a3a66;
     }
-    .splash h2{ font-size:20px; line-height:1.35; }
-    .splash p{ font-size:14px; color:var(--muted); }
-    .splash .skip{ margin-top:8px; padding:10px 14px; border-radius:999px; border:1px solid #2a3a66; background:#16234a; color:#fff }
-    .fadeout { animation: fadeout .6s ease forwards; }
-    @keyframes fadeout { to { opacity:0; transform:scale(.985) } }
+    .splash h2{font-size:20px;line-height:1.35;}
+    .splash p{font-size:14px;color:var(--muted);}
+    .splash .skip{
+      margin-top:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid #2a3a66;
+      background:#16234a;
+      color:#fff;
+    }
+    .fadeout{animation:fadeout .6s ease forwards;}
+    @keyframes fadeout{to{opacity:0;transform:scale(.985)}}
 
-    /* --- Mode screen --- */
+    /* Mode select cards */
     .mode-cards{display:grid;gap:10px;margin-top:8px}
     .mode-card{
-      display:flex;flex-direction:column;align-items:flex-start;gap:4px;
-      background:#1b2238;border:1px solid #2a3a66;color:#e8f0ff;
-      border-radius:10px;padding:12px;text-align:left;cursor:pointer;font-size:15px
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:4px;
+      background:#1b2238;
+      border:1px solid #2a3a66;
+      color:#e8f0ff;
+      border-radius:10px;
+      padding:12px;
+      text-align:left;
+      cursor:pointer;
+      font-size:15px;
     }
     .mode-card strong{font-size:16px}
     .mode-card span{font-size:13px;color:var(--muted)}
@@ -92,15 +217,17 @@
     <section id="intro" class="screen active">
       <div class="panel">
         <div class="splash">
-          <img id="introImg" alt="Constitution of India — Cover" src="Constitution_of_India.webp">
-          <h2>Namaste! 👋<br>Welcome to <em>Kaun Banega Samvidhan Gyani</em></h2>
-          <p>Celebrate and learn the Constitution of India.<br>Tap Skip or wait a moment…</p>
+          <!-- Local image is loaded from the same folder as this HTML file. Replace
+               the filename if your image name is different. -->
+          <img id="introImg" alt="Constitution of India — Cover" src="Constitution_of_India.webp" />
+          <h2>Namaste! 👋<br />Welcome to <em>Kaun Banega Samvidhan Gyani</em></h2>
+          <p>Celebrate and learn the Constitution of India.<br />Tap Skip or wait a moment…</p>
           <button id="btnSkipIntro" class="skip">Skip</button>
         </div>
       </div>
     </section>
 
-    <!-- MODE SELECT (after splash) -->
+    <!-- MODE SELECT -->
     <section id="mode" class="screen">
       <div class="panel">
         <h2 style="margin-bottom:10px">Choose Mode</h2>
@@ -117,7 +244,7 @@
       </div>
     </section>
 
-    <!-- START -->
+    <!-- START RULES -->
     <section id="start" class="screen">
       <div class="panel">
         <h2>Rules</h2>
@@ -176,48 +303,136 @@
   </div>
 
 <script>
-// =============== SPLASH → MODE ===============
+//==================== SPLASH TO MODE TRANSITION ====================
+// At first the intro splash is shown. After a short delay or when the
+// user clicks Skip, we transition to the mode selection screen.
 (function initIntro(){
   const intro = document.getElementById('intro');
   const mode  = document.getElementById('mode');
-  mode.classList.remove('active'); // ensure hidden initially
+  // Ensure the mode screen is hidden initially
+  mode.classList.remove('active');
   function goToMode(){
     intro.classList.add('fadeout');
-    setTimeout(()=>{ intro.classList.remove('active'); mode.classList.add('active'); }, 600);
+    setTimeout(()=>{
+      intro.classList.remove('active');
+      mode.classList.add('active');
+    }, 600);
   }
   const skipBtn = document.getElementById('btnSkipIntro');
+  // Automatically transition after 3.5 seconds
   const t = setTimeout(goToMode, 3500);
-  if (skipBtn) skipBtn.addEventListener('click', ()=>{ clearTimeout(t); goToMode(); });
+  // Allow the user to skip immediately
+  if (skipBtn) skipBtn.addEventListener('click', ()=>{
+    clearTimeout(t);
+    goToMode();
+  });
 })();
 
-// =============== MODE STATE ===============
-let MODE = 'play';           // 'play' | 'learn'
-let TIMER_ENABLED = true;    // no timer in learn
+//==================== MODE SELECTION ====================
+// The game supports two modes: 'play' (full game with 15 questions and a timer)
+// and 'learn' (shorter quiz with no timer). Changing modes updates the rules
+// text and toggles timer behaviour.
+let MODE = 'play';
+let TIMER_ENABLED = true;
 
+// Basic question set for learn mode. Answers have been positioned
+// deliberately across different indices to avoid predictability.
 const BASIC_QUESTIONS = [
-  {q:"When did the Constitution of India come into effect?", opts:["26 January 1950","15 August 1947","26 November 1949","1 January 1950"], answer:2},
-  {q:"Who is known as the 'Father of the Indian Constitution'?", opts:["Jawaharlal Nehru","Sardar Patel","B. R. Ambedkar","Rajendra Prasad"], answer:2},
-  {q:"Which part of the Constitution contains the Fundamental Rights?", opts:["Part IV","Part III","Part V","Part I"], answer:1},
-  {q:"The Preamble declares India to be a _____ Republic.", opts:["Sovereign Democratic","Federal Democratic","Unitary Socialist"], answer:0},
-  {q:"What does Article 21 guarantee?", opts:["Protection of life and personal liberty","Prohibition of discrimination","Freedom of speech and expression","Right against exploitation","Sovereign Socialist Secular Democratic", answer:3},
-  {q:"Right to Education as a Fundamental Right is which Article?", opts:["Article 45","Article 21A","Article 19(1)(a)","Article 23"], answer:1},
-  {q:"Which Schedule lists languages recognized by the Constitution?", opts:["Seventh Schedule","Tenth Schedule","Twelfth Schedule","Eighth Schedule"], answer:3},
-  {q:"Directive Principles of State Policy are in which Part?", opts:["Part IV","Part III","Part VI","Part IX"], answer:0},
-  {q:"Who administers the oath of office to the President of India?", opts:["Chief Justice of India","Prime Minister","Speaker of Lok Sabha","Attorney General"], answer:0},
-  {q:"Which amendment lowered the voting age from 21 to 18?", opts:["61st Amendment","42nd Amendment","44th Amendment","73rd Amendment"], answer:0},
+  { q: "When did the Constitution of India come into effect?",
+    opts:["15 August 1947","26 January 1950","26 November 1949","1 January 1950"],
+    answer: 1 },
+  { q: "Who is known as the 'Father of the Indian Constitution'?",
+    opts:["Sardar Patel","B. R. Ambedkar","Rajendra Prasad","Jawaharlal Nehru"],
+    answer: 1 },
+  { q: "Which part of the Constitution contains the Fundamental Rights?",
+    opts:["Part V","Part III","Part IV","Part I"],
+    answer: 1 },
+  { q: "The Preamble declares India to be a _____ Republic.",
+    opts:["Federal Democratic","Sovereign Socialist Secular Democratic","Unitary Socialist","Sovereign Democratic"],
+    answer: 1 },
+  { q: "What does Article 21 guarantee?",
+    opts:["Freedom of speech and expression","Protection of life and personal liberty","Prohibition of discrimination","Right against exploitation"],
+    answer: 1 },
+  { q: "Right to Education as a Fundamental Right is which Article?",
+    opts:["Article 19(1)(a)","Article 21A","Article 45","Article 23"],
+    answer: 1 },
+  { q: "Which Schedule lists languages recognized by the Constitution?",
+    opts:["Tenth Schedule","Seventh Schedule","Twelfth Schedule","Eighth Schedule"],
+    answer: 3 },
+  { q: "Directive Principles of State Policy are in which Part?",
+    opts:["Part VI","Part IV","Part IX","Part III"],
+    answer: 1 },
+  { q: "Who administers the oath of office to the President of India?",
+    opts:["Prime Minister","Chief Justice of India","Speaker of Lok Sabha","Attorney General"],
+    answer: 1 },
+  { q: "Which amendment lowered the voting age from 21 to 18?",
+    opts:["61st Amendment","42nd Amendment","44th Amendment","73rd Amendment"],
+    answer: 0 },
 ];
 
+// Full question set for play mode. Each question has four options and the
+// correct answer index varies across A/B/C/D to reduce predictability.
+const QUESTIONS = [
+  { q: "When did the Constitution of India come into effect?",
+    opts:["15 August 1947","26 November 1949","26 January 1950","1 January 1950"],
+    answer: 2 },
+  { q: "Who is known as the 'Father of the Indian Constitution'?",
+    opts:["Sardar Patel","B. R. Ambedkar","Rajendra Prasad","Jawaharlal Nehru"],
+    answer: 1 },
+  { q: "Which part of the Constitution contains the Fundamental Rights?",
+    opts:["Part V","Part III","Part IV","Part I"],
+    answer: 1 },
+  { q: "The Preamble declares India to be a _____ Republic.",
+    opts:["Federal Democratic","Sovereign Socialist Secular Democratic","Unitary Socialist","Sovereign Democratic"],
+    answer: 1 },
+  { q: "Which Articles guarantee the Right to Equality?",
+    opts:["Articles 19–22","Articles 14–18","Article 21","Article 32"],
+    answer: 1 },
+  { q: "Which Article is called the 'heart and soul' of the Constitution?",
+    opts:["Article 368","Article 32","Article 21","Article 370"],
+    answer: 1 },
+  { q: "Directive Principles of State Policy are in which Part?",
+    opts:["Part III","Part IV","Part VI","Part IX"],
+    answer: 1 },
+  { q: "Fundamental Duties were added by which Amendment?",
+    opts:["44th Amendment","42nd Amendment","73rd Amendment","61st Amendment"],
+    answer: 1 },
+  { q: "Right to Education as a Fundamental Right is which Article?",
+    opts:["Article 19(1)(a)","Article 21A","Article 45","Article 23"],
+    answer: 1 },
+  { q: "Which Schedule lists languages recognized by the Constitution?",
+    opts:["Tenth Schedule","Seventh Schedule","Twelfth Schedule","Eighth Schedule"],
+    answer: 3 },
+  { q: "Which body resolves disputes regarding the election of the President?",
+    opts:["Lok Sabha","Supreme Court","Election Commission","Rajya Sabha"],
+    answer: 1 },
+  { q: "What does Article 21 guarantee?",
+    opts:["Freedom of speech and expression","Protection of life and personal liberty","Prohibition of discrimination","Right against exploitation"],
+    answer: 1 },
+  { q: "Which amendment lowered the voting age from 21 to 18?",
+    opts:["61st Amendment","42nd Amendment","44th Amendment","73rd Amendment"],
+    answer: 0 },
+  { q: "Panchayati Raj got constitutional status by which amendment?",
+    opts:["74th Amendment","73rd Amendment","52nd Amendment","86th Amendment"],
+    answer: 1 },
+  { q: "Which Schedule deals with the Anti-defection law?",
+    opts:["Eleventh Schedule","Ninth Schedule","Tenth Schedule","Twelfth Schedule"],
+    answer: 2 },
+];
+
+// Mode buttons update MODE and TIMER_ENABLED accordingly and show rules
 (function initMode(){
   const startScreen = document.getElementById('start');
   const playBtn  = document.getElementById('btnModePlay');
   const learnBtn = document.getElementById('btnModeLearn');
   const rules    = document.getElementById('rulesList');
-
   function showStartFor(mode){
     MODE = mode;
     TIMER_ENABLED = (mode === 'play');
+    // Hide all screens and show the start screen
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     startScreen.classList.add('active');
+    // Adjust rules text based on mode
     if (rules){
       rules.innerHTML = (MODE==='play')
         ? `<li>15 questions. Answer correctly to climb the ladder.</li>
@@ -232,38 +447,55 @@ const BASIC_QUESTIONS = [
   learnBtn?.addEventListener('click', ()=> showStartFor('learn'));
 })();
 
-// =============== QUIZ LOGIC ===============
-const $ = (q)=>document.querySelector(q);
+//==================== GAME LOGIC ====================
+// Utility functions for querying DOM and shuffling arrays
+const $  = (q)=>document.querySelector(q);
 const $$ = (q)=>Array.from(document.querySelectorAll(q));
-const shuffle = a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(([,v])=>v);
+const shuffle = a=>a.map(x=>[Math.random(),x])
+  .sort((x,y)=>x[0]-y[0])
+  .map(([,v])=>v);
 
-const MONEY = [1000,2000,3000,5000,10000,20000,40000,80000,160000,320000,640000,1250000,2500000,5000000,10000000];
-const SAFE = new Set([4,9]); // Q5, Q10
-
-const QUESTIONS = [
-  q:"When did the Constitution of India come into effect?", opts:["26 January 1950","15 August 1947","26 November 1949","1 January 1950"], answer:2},
-  {q:"Who is known as the 'Father of the Indian Constitution'?", opts:["Jawaharlal Nehru","Sardar Patel","B. R. Ambedkar","Rajendra Prasad"], answer:2},
-  {q:"Which part of the Constitution contains the Fundamental Rights?", opts:["Part IV","Part III","Part V","Part I"], answer:1},
-  {q:"The Preamble declares India to be a _____ Republic.", opts:["Sovereign Democratic","Federal Democratic","Unitary Socialist"], answer:0},
-  {q:"What does Article 21 guarantee?", opts:["Protection of life and personal liberty","Prohibition of discrimination","Freedom of speech and expression","Right against exploitation","Sovereign Socialist Secular Democratic", answer:3},
-  {q:"Right to Education as a Fundamental Right is which Article?", opts:["Article 45","Article 21A","Article 19(1)(a)","Article 23"], answer:1},
-  {q:"Which Schedule lists languages recognized by the Constitution?", opts:["Seventh Schedule","Tenth Schedule","Twelfth Schedule","Eighth Schedule"], answer:3},
-  {q:"Directive Principles of State Policy are in which Part?", opts:["Part IV","Part III","Part VI","Part IX"], answer:0},
-  {q:"Who administers the oath of office to the President of India?", opts:["Chief Justice of India","Prime Minister","Speaker of Lok Sabha","Attorney General"], answer:0},
-  {q:"Which amendment lowered the voting age from 21 to 18?", opts:["61st Amendment","42nd Amendment","44th Amendment","73rd Amendment"], answer:0},
+const MONEY = [
+  1000,2000,3000,5000,10000,20000,40000,80000,160000,
+  320000,640000,1250000,2500000,5000000,10000000
 ];
+const SAFE = new Set([4,9]);
 
+// References to key elements
 const screens = { start:$('#start'), game:$('#game'), result:$('#result') };
-const qEl = $('#question'), optsEl = $('#options'), timerEl = $('#timer'), barEl = $('#timeBar');
-const lockBtn = $('#btnLock'), nextBtn = $('#btnNext'), quitBtn = $('#btnQuit'), startBtn = $('#btnStart');
-const resultText = $('#resultText'), winningsEl = $('#winnings'), ladderEl = $('#ladder');
-const toast = (t)=>{ const n=$('#toast'); n.textContent=t; n.classList.add('show'); setTimeout(()=>n.classList.remove('show'), 2200); };
+const qEl = $('#question');
+const optsEl = $('#options');
+const timerEl = $('#timer');
+const barEl = $('#timeBar');
+const lockBtn = $('#btnLock');
+const nextBtn = $('#btnNext');
+const quitBtn = $('#btnQuit');
+const resultText = $('#resultText');
+const winningsEl = $('#winnings');
+const ladderEl = $('#ladder');
+const toast = (t)=>{
+  const n = $('#toast');
+  n.textContent = t;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'), 2200);
+};
 
-let order = [], qIndex = 0, selection = null, timer = null, timeLeft = 45, winnings = 0, maxReached = -1;
+// State variables
+let order = [];
+let qIndex = 0;
+let selection = null;
+let timer = null;
+let timeLeft = 45;
+let winnings = 0;
+let maxReached = -1;
 let usedLL = { fifty:false, aud:false, phone:false, flip:false };
 
-function show(id){ Object.values(screens).forEach(s=>s.classList.remove('active')); screens[id].classList.add('active'); }
+function show(id){
+  Object.values(screens).forEach(s=>s.classList.remove('active'));
+  screens[id].classList.add('active');
+}
 
+// Render the money ladder. Highlights safe levels in green.
 function renderLadder(){
   ladderEl.innerHTML = '';
   MONEY.forEach((amt,i)=>{
@@ -275,23 +507,29 @@ function renderLadder(){
   });
 }
 
+// Start or restart the game
 function startGame(){
-  // pick bank based on mode
+  // Choose question bank based on mode
   const bank = (MODE==='learn') ? BASIC_QUESTIONS.slice() : QUESTIONS.slice();
   order = shuffle(bank);
+  // Ensure we have at most 15 questions
   if (order.length < 15){
     const extra = shuffle(QUESTIONS.filter(q=>!order.includes(q))).slice(0, 15 - order.length);
     order = order.concat(extra);
   }
   order = order.slice(0,15);
-
-  qIndex = 0; selection = null; winnings = 0; maxReached = -1;
+  // Reset state
+  qIndex = 0;
+  selection = null;
+  winnings = 0;
+  maxReached = -1;
   usedLL = { fifty:false, aud:false, phone:false, flip:false };
   renderLadder();
   show('game');
   renderQuestion();
 }
 
+// Render current question and its options
 function renderQuestion(){
   const q = order[qIndex];
   qEl.textContent = q.q;
@@ -304,10 +542,14 @@ function renderQuestion(){
     b.onclick = ()=>selectOption(i,b);
     optsEl.appendChild(b);
   });
+  // Highlight current ladder step
   $$('#ladder li').forEach(li=>li.classList.remove('current'));
-  const currentLi = $$('#ladder li')[qIndex]; if (currentLi) currentLi.classList.add('current');
-  lockBtn.disabled = true; nextBtn.disabled = true;
-
+  const currentLi = $$('#ladder li')[qIndex];
+  if (currentLi) currentLi.classList.add('current');
+  // Reset buttons
+  lockBtn.disabled = true;
+  nextBtn.disabled = true;
+  // Start timer for play mode or show infinity in learn mode
   if (TIMER_ENABLED){
     startTimer(45);
   } else {
@@ -348,7 +590,8 @@ function lockAnswer(){
 
 function nextQuestion(){
   if (qIndex >= order.length-1){ endGame(true); return; }
-  qIndex++; selection = null;
+  qIndex++;
+  selection = null;
   renderQuestion();
 }
 
@@ -357,7 +600,10 @@ function quitGame(){ endGame(true, true); }
 function endGame(completed, quit=false){
   let final = winnings;
   if(!completed && !quit){
-    let safe=0; for (const s of [...SAFE].sort((a,b)=>a-b)){ if(maxReached>=s) safe=MONEY[s]; }
+    let safe=0;
+    for (const s of [...SAFE].sort((a,b)=>a-b)){
+      if(maxReached>=s) safe=MONEY[s];
+    }
     final = safe;
   }
   show('result');
@@ -368,12 +614,14 @@ function endGame(completed, quit=false){
   clearTimer();
 }
 
-// Timer
+// Timer functions
 function startTimer(sec){
   clearTimer();
-  timeLeft = sec; updateTimerUI();
+  timeLeft = sec;
+  updateTimerUI();
   timer = setInterval(()=>{
-    timeLeft--; updateTimerUI();
+    timeLeft--;
+    updateTimerUI();
     if(timeLeft<=0){ clearTimer(); toast('⏰ Time up!'); endGame(false); }
   },1000);
 }
@@ -384,35 +632,38 @@ function updateTimerUI(){
 }
 function clearTimer(){ if(timer){ clearInterval(timer); timer=null; } }
 
-// Lifelines
+// Lifeline behaviour
 document.getElementById('ll5050').addEventListener('click', ()=>{
   if (usedLL.fifty) return;
   usedLL.fifty = true;
   const correct = order[qIndex].answer;
   const hide = shuffle([0,1,2,3].filter(i=>i!==correct)).slice(0,2);
-  $$('.opt').forEach((o,i)=>{ if(hide.includes(i)){ o.style.display='none'; o.disabled=true; } });
+  $$('.opt').forEach((o,i)=>{
+    if(hide.includes(i)){
+      o.style.display='none';
+      o.disabled = true;
+    }
+  });
   toast('🪙 50:50 used.');
 });
 document.getElementById('llAudience').addEventListener('click', ()=> toast('📊 Audience suggests: option likely correct! (demo)'));
 document.getElementById('llPhone').addEventListener('click', ()=> toast('📞 Friend: I think it’s correct! (demo)'));
 document.getElementById('llFlip').addEventListener('click', ()=>{
-  if (usedLL.flip) return; usedLL.flip = true;
+  if (usedLL.flip) return;
+  usedLL.flip = true;
   toast('🔄 Flipped! New question.');
   renderQuestion();
 });
 
-// Buttons
+// Button wiring
 document.getElementById('btnStart').addEventListener('click', startGame);
 document.getElementById('btnLock').addEventListener('click', lockAnswer);
 document.getElementById('btnNext').addEventListener('click', nextQuestion);
 document.getElementById('btnQuit').addEventListener('click', quitGame);
-document.getElementById('btnPlayAgain')?.addEventListener('click', ()=>{ 
+document.getElementById('btnPlayAgain')?.addEventListener('click', ()=>{
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('mode').classList.add('active'); // back to mode choose
+  document.getElementById('mode').classList.add('active');
 });
 </script>
 </body>
 </html>
-
-
-
