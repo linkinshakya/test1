@@ -195,13 +195,13 @@ let MODE = 'play';           // 'play' | 'learn'
 let TIMER_ENABLED = true;    // no timer in learn
 
 const BASIC_QUESTIONS = [
-  {q:"When did the Constitution of India come into effect?", opts:["26 January 1950","15 August 1947","26 November 1949","1 January 1950"], answer:0},
-  {q:"Who is known as the 'Father of the Indian Constitution'?", opts:["B. R. Ambedkar","Jawaharlal Nehru","Sardar Patel","Rajendra Prasad"], answer:0},
-  {q:"Which part of the Constitution contains the Fundamental Rights?", opts:["Part III","Part IV","Part V","Part I"], answer:0},
-  {q:"The Preamble declares India to be a _____ Republic.", opts:["Sovereign Socialist Secular Democratic","Sovereign Democratic","Federal Democratic","Unitary Socialist"], answer:0},
-  {q:"What does Article 21 guarantee?", opts:["Protection of life and personal liberty","Prohibition of discrimination","Freedom of speech and expression","Right against exploitation"], answer:0},
-  {q:"Right to Education as a Fundamental Right is which Article?", opts:["Article 21A","Article 45","Article 19(1)(a)","Article 23"], answer:0},
-  {q:"Which Schedule lists languages recognized by the Constitution?", opts:["Eighth Schedule","Seventh Schedule","Tenth Schedule","Twelfth Schedule"], answer:0},
+  {q:"When did the Constitution of India come into effect?", opts:["26 January 1950","15 August 1947","26 November 1949","1 January 1950"], answer:2},
+  {q:"Who is known as the 'Father of the Indian Constitution'?", opts:["Jawaharlal Nehru","Sardar Patel","B. R. Ambedkar","Rajendra Prasad"], answer:2},
+  {q:"Which part of the Constitution contains the Fundamental Rights?", opts:["Part IV","Part III","Part V","Part I"], answer:1},
+  {q:"The Preamble declares India to be a _____ Republic.", opts:["Sovereign Democratic","Federal Democratic","Unitary Socialist"], answer:0},
+  {q:"What does Article 21 guarantee?", opts:["Protection of life and personal liberty","Prohibition of discrimination","Freedom of speech and expression","Right against exploitation","Sovereign Socialist Secular Democratic", answer:3},
+  {q:"Right to Education as a Fundamental Right is which Article?", opts:["Article 45","Article 21A","Article 19(1)(a)","Article 23"], answer:1},
+  {q:"Which Schedule lists languages recognized by the Constitution?", opts:["Seventh Schedule","Tenth Schedule","Twelfth Schedule","Eighth Schedule"], answer:3},
   {q:"Directive Principles of State Policy are in which Part?", opts:["Part IV","Part III","Part VI","Part IX"], answer:0},
   {q:"Who administers the oath of office to the President of India?", opts:["Chief Justice of India","Prime Minister","Speaker of Lok Sabha","Attorney General"], answer:0},
   {q:"Which amendment lowered the voting age from 21 to 18?", opts:["61st Amendment","42nd Amendment","44th Amendment","73rd Amendment"], answer:0},
@@ -418,4 +418,5 @@ document.getElementById('btnPlayAgain')?.addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
 
