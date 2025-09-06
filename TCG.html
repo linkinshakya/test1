@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Kaun Banega Samvidhan Gyani — Constitution of India Quiz</title>
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#131a2a; --ink:#e8f0ff; --muted:#a5b4d4; --brand:#6be675; --accent:#ffd166; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;width:100%}
+    body{background:#0b1020;color:var(--ink);font-family:system-ui,Segoe UI,Roboto,sans-serif;font-size:16px;}
+
+    .app{padding:12px;max-width:600px;margin:0 auto;}
+    header{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:12px}
+    h1{font-size:22px;line-height:1.3}
+    .badge{font-size:12px;color:var(--muted)}
+
+    .panel{background:var(--panel);border-radius:12px;padding:12px;margin-bottom:12px}
+    .screen{display:none}
+    .screen.active{display:block}
+
+    .q{font-size:18px;margin-bottom:10px}
+    .opts{display:flex;flex-direction:column;gap:10px}
+    .opt{padding:10px;border-radius:8px;background:#1b2238;border:1px solid #2a3a66;color:#dbe6ff;text-align:left;font-size:15px;cursor:pointer}
+    .opt.selected{border-color:var(--accent)}
+    .opt.correct{border-color:#25d366}
+    .opt.wrong{border-color:var(--danger)}
+
+    .controls{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    button{padding:10px;border:none;border-radius:8px;font-size:15px;color:#fff;cursor:pointer}
+    .primary{background:#2a4b9a}
+    .success{background:#1e6b3a}
+    .danger{background:#6a1e1e}
+
+    .lifelines{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+    .lifelines button{flex:1;min-width:45%}
+
+    #ladder{list-style:none;padding:0;margin-top:12px;font-size:14px;max-height:200px;overflow:auto}
+    #ladder li{display:flex;justify-content:space-between;padding:6px;border-radius:6px;background:#0f1732;margin-bottom:4px}
+    #ladder li.current{border:1px solid var(--accent)}
+    #ladder li.safe{color:#6be675}
+
+    .footer{font-size:13px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+    .bar{flex:1;height:6px;border-radius:4px;background:#101936;margin:0 8px;overflow:hidden}
+    .bar > div{height:100%;background:linear-gradient(90deg,#4b7cff,#86b6ff);width:0%}
+
+    #toast{position:fixed;left:10px;right:10px;bottom:10px;background:#0e162b;padding:10px;border-radius:8px;font-size:14px;color:#cfe0ff;display:none;text-align:center}
+    #toast.show{display:block}
+
+    /* --- Splash styles --- */
+    .splash {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      min-height:100dvh; text-align:center; gap:12px; padding:16px;
+    }
+    .splash img{
+      width:75%; max-width:380px; height:auto; border-radius:12px;
+      box-shadow:0 10px 24px rgba(0,0,0,.35); border:1px solid #2a3a66;
+    }
+    .splash h2{ font-size:20px; line-height:1.35; }
+    .splash p{ font-size:14px; color:var(--muted); }
+    .splash .skip{ margin-top:8px; padding:10px 14px; border-radius:999px; border:1px solid #2a3a66; background:#16234a; color:#fff }
+    .fadeout { animation: fadeout .6s ease forwards; }
+    @keyframes fadeout { to { opacity:0; transform:scale(.985) } }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- INTRO SPLASH -->
+    <section id="intro" class="screen active">
+      <div class="panel">
+        <div class="splash">
+          <img id="introImg" alt="Constitution of India — Cover"
+              src="Constitution_of_India.webp">
+
+          <h2>Namaste! 👋<br>Welcome to <em>Kaun Banega Samvidhan Gyani</em></h2>
+          <p>Celebrate and learn the Constitution of India.<br>Tap Skip or wait a moment…</p>
+          <button id="btnSkipIntro" class="skip">Skip</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- START -->
+    <section id="start" class="screen">
+      <div class="panel">
+        <h2>Rules</h2>
+        <ul style="font-size:14px;line-height:1.4;margin:10px 0 12px 16px;">
+          <li>15 questions. Answer correctly to climb the ladder.</li>
+          <li>Safety levels at Q5 and Q10.</li>
+          <li>Use lifelines: 50:50, Audience, Phone, Flip.</li>
+        </ul>
+        <div class="controls">
+          <button class="primary" id="btnStart">Start Game</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="game" class="screen">
+      <div class="panel">
+        <div class="q" id="question"></div>
+        <div class="opts" id="options"></div>
+        <div class="controls">
+          <button class="primary" id="btnLock" disabled>Lock Answer</button>
+          <button class="success" id="btnNext" disabled>Next</button>
+          <button class="danger" id="btnQuit">Quit</button>
+        </div>
+        <div class="footer">
+          <span>⏱️ <strong id="timer">45</strong>s</span>
+          <div class="bar"><div id="timeBar"></div></div>
+          <span id="winnings">₹0</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Lifelines</h3>
+        <div class="lifelines">
+          <button id="ll5050">50:50</button>
+          <button id="llAudience">Audience</button>
+          <button id="llPhone">Phone</button>
+          <button id="llFlip">Flip</button>
+        </div>
+        <h3 style="margin-top:10px">Ladder</h3>
+        <ol id="ladder"></ol>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="result" class="screen">
+      <div class="panel">
+        <h2>Game Over</h2>
+        <p id="resultText"></p>
+        <div class="controls">
+          <button class="primary" id="btnPlayAgain">Play Again</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast"></div>
+  </div>
+<script>
+// =============== INTRO SPLASH (kept) ===============
+(function initIntro(){
+  const intro = document.getElementById('intro');
+  const start = document.getElementById('start');
+  const skipBtn = document.getElementById('btnSkipIntro');
+  if (start) start.classList.remove('active');
+  function goToStart(){
+    intro.classList.add('fadeout');
+    setTimeout(()=>{
+      intro.classList.remove('active');
+      if (start) start.classList.add('active');
+    }, 600);
+  }
+  const t = setTimeout(goToStart, 3500);
+  if (skipBtn) skipBtn.addEventListener('click', ()=>{ clearTimeout(t); goToStart(); });
+})();
+
+// =============== QUIZ LOGIC (new) ===============
+const $ = (q)=>document.querySelector(q);
+const $$ = (q)=>Array.from(document.querySelectorAll(q));
+const shuffle = a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(([,v])=>v);
+
+// Money ladder (Q1..Q15)
+const MONEY = [1000,2000,3000,5000,10000,20000,40000,80000,160000,320000,640000,1250000,2500000,5000000,10000000];
+const SAFE = new Set([4,9]); // Q5, Q10 (zero-indexed)
+
+// Question bank (15)
+const QUESTIONS = [
+  {q:"When did the Constitution of India come into effect?", opts:["26 January 1950","15 August 1947","26 November 1949","1 January 1950"], answer:0},
+  {q:"Who is known as the 'Father of the Indian Constitution'?", opts:["B. R. Ambedkar","Jawaharlal Nehru","Sardar Patel","Rajendra Prasad"], answer:0},
+  {q:"Which part of the Constitution contains the Fundamental Rights?", opts:["Part III","Part IV","Part V","Part I"], answer:0},
+  {q:"The Preamble declares India to be a _____ Republic.", opts:["Sovereign Socialist Secular Democratic","Sovereign Democratic","Federal Democratic","Unitary Socialist"], answer:0},
+  {q:"Which Articles guarantee the Right to Equality?", opts:["Articles 14–18","Articles 19–22","Article 32","Article 21"], answer:0},
+  {q:"Which Article is called the 'heart and soul' of the Constitution?", opts:["Article 32","Article 21","Article 368","Article 370"], answer:0},
+  {q:"Directive Principles of State Policy are in which Part?", opts:["Part IV","Part III","Part VI","Part IX"], answer:0},
+  {q:"Fundamental Duties were added by which Amendment?", opts:["42nd Amendment","44th Amendment","73rd Amendment","61st Amendment"], answer:0},
+  {q:"Right to Education as a Fundamental Right is which Article?", opts:["Article 21A","Article 45","Article 19(1)(a)","Article 23"], answer:0},
+  {q:"Which Schedule lists languages recognized by the Constitution?", opts:["Eighth Schedule","Seventh Schedule","Tenth Schedule","Twelfth Schedule"], answer:0},
+  {q:"Which body resolves disputes regarding the election of the President?", opts:["Supreme Court","Lok Sabha","Election Commission","Rajya Sabha"], answer:0},
+  {q:"What does Article 21 guarantee?", opts:["Protection of life and personal liberty","Prohibition of discrimination","Freedom of speech and expression","Right against exploitation"], answer:0},
+  {q:"Which amendment lowered the voting age from 21 to 18?", opts:["61st Amendment","42nd Amendment","44th Amendment","73rd Amendment"], answer:0},
+  {q:"Panchayati Raj got constitutional status by which amendment?", opts:["73rd Amendment","74th Amendment","52nd Amendment","86th Amendment"], answer:0},
+  {q:"Which Schedule deals with the Anti-defection law?", opts:["Tenth Schedule","Ninth Schedule","Eleventh Schedule","Twelfth Schedule"], answer:0}
+];
+
+// Elements
+const screens = { start:$('#start'), game:$('#game'), result:$('#result') };
+const qEl = $('#question'), optsEl = $('#options'), timerEl = $('#timer'), barEl = $('#timeBar');
+const lockBtn = $('#btnLock'), nextBtn = $('#btnNext'), quitBtn = $('#btnQuit'), startBtn = $('#btnStart');
+const resultText = $('#resultText'), winningsEl = $('#winnings'), ladderEl = $('#ladder');
+const toast = (t)=>{ const n=$('#toast'); n.textContent=t; n.classList.add('show'); setTimeout(()=>n.classList.remove('show'), 2200); };
+
+// State
+let order = [], qIndex = 0, selection = null, timer = null, timeLeft = 45, winnings = 0, maxReached = -1;
+let usedLL = { fifty:false, aud:false, phone:false, flip:false };
+
+// Screen helpers
+function show(id){ Object.values(screens).forEach(s=>s.classList.remove('active')); screens[id].classList.add('active'); }
+
+// Ladder render
+function renderLadder(){
+  ladderEl.innerHTML = '';
+  MONEY.forEach((amt,i)=>{
+    const li = document.createElement('li');
+    li.dataset.q = i;
+    li.innerHTML = `<span>Q${i+1}</span><strong>₹${amt.toLocaleString('en-IN')}</strong>`;
+    if (SAFE.has(i)) li.classList.add('safe');
+    ladderEl.appendChild(li);
+  });
+}
+
+// Start game
+function startGame(){
+  order = shuffle(QUESTIONS.slice()); // 15 shuffled
+  qIndex = 0; selection = null; winnings = 0; maxReached = -1;
+  usedLL = { fifty:false, aud:false, phone:false, flip:false };
+  renderLadder();
+  show('game');
+  renderQuestion();
+}
+
+// Render a question
+function renderQuestion(){
+  const q = order[qIndex];
+  qEl.textContent = q.q;
+  optsEl.innerHTML = '';
+  ['A','B','C','D'].forEach((label,i)=>{
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.dataset.idx = i;
+    b.innerHTML = `<strong>${label}.</strong> ${q.opts[i]}`;
+    b.onclick = ()=>selectOption(i,b);
+    optsEl.appendChild(b);
+  });
+  $$('#ladder li').forEach(li=>li.classList.remove('current'));
+  const currentLi = $$('#ladder li')[qIndex]; if (currentLi) currentLi.classList.add('current');
+  lockBtn.disabled = true; nextBtn.disabled = true;
+  startTimer(45);
+}
+
+function selectOption(i,node){
+  selection = i;
+  $$('.opt').forEach(o=>o.classList.remove('selected'));
+  node.classList.add('selected');
+  lockBtn.disabled = false;
+}
+
+function lockAnswer(){
+  if (selection==null) return;
+  const correct = order[qIndex].answer;
+  $$('.opt').forEach((o,i)=>{
+    o.disabled = true;
+    if(i===correct) o.classList.add('correct');
+  });
+  clearTimer();
+  if (selection === correct){
+    maxReached = qIndex;
+    winnings = MONEY[qIndex];
+    winningsEl.textContent = `₹${winnings.toLocaleString('en-IN')}`;
+    toast('✅ Correct!');
+    nextBtn.disabled = false;
+    lockBtn.disabled = true;
+  } else {
+    $$('.opt')[selection].classList.add('wrong');
+    toast('❌ Wrong answer.');
+    endGame(false);
+  }
+}
+
+function nextQuestion(){
+  if (qIndex >= order.length-1){ endGame(true); return; }
+  qIndex++; selection = null;
+  renderQuestion();
+}
+
+function quitGame(){ endGame(true, true); }
+
+function endGame(completed, quit=false){
+  // safe fallback if lost
+  let final = winnings;
+  if(!completed && !quit){
+    let safe=0; for (const s of [...SAFE].sort((a,b)=>a-b)){ if(maxReached>=s) safe=MONEY[s]; }
+    final = safe;
+  }
+  show('result');
+  resultText.textContent = completed && !quit
+    ? `🎉 You answered all ${order.length} questions! You win ₹${MONEY[MONEY.length-1].toLocaleString('en-IN')}.`
+    : quit ? `You quit safely with ₹${final.toLocaleString('en-IN')}.`
+           : `Game over. You take home ₹${final.toLocaleString('en-IN')}.`;
+  clearTimer();
+}
+
+// Timer
+function startTimer(sec){
+  clearTimer();
+  timeLeft = sec; updateTimerUI();
+  timer = setInterval(()=>{
+    timeLeft--; updateTimerUI();
+    if(timeLeft<=0){ clearTimer(); toast('⏰ Time up!'); endGame(false); }
+  },1000);
+}
+function updateTimerUI(){
+  timerEl.textContent = timeLeft;
+  const pct = Math.max(0, Math.min(100, (timeLeft/45)*100));
+  barEl.style.width = pct+'%';
+}
+function clearTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+
+// Lifelines (minimal functioning 50:50; others show a helpful toast)
+$('#ll5050').addEventListener('click', ()=>{
+  if (usedLL.fifty) return;
+  usedLL.fifty = true;
+  const correct = order[qIndex].answer;
+  const hide = shuffle([0,1,2,3].filter(i=>i!==correct)).slice(0,2);
+  $$('.opt').forEach((o,i)=>{ if(hide.includes(i)){ o.style.display='none'; o.disabled=true; } });
+  toast('🪙 50:50 used.');
+});
+$('#llAudience').addEventListener('click', ()=> toast('📊 Audience suggests: option likely correct! (demo)'));
+$('#llPhone').addEventListener('click', ()=> toast('📞 Friend: I think it’s correct! (demo)'));
+$('#llFlip').addEventListener('click', ()=>{
+  if (usedLL.flip) return; usedLL.flip = true;
+  toast('🔄 Flipped! New question.');
+  renderQuestion();
+});
+
+// Wire buttons
+startBtn.addEventListener('click', ()=> startGame());
+lockBtn.addEventListener('click', ()=> lockAnswer());
+nextBtn.addEventListener('click', ()=> nextQuestion());
+quitBtn.addEventListener('click', ()=> quitGame());
+
+// Allow Play Again
+$('#btnPlayAgain')?.addEventListener('click', ()=>{ show('start'); });
+</script>
+
+</body>
+</html>
