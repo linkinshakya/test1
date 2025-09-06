@@ -35,7 +35,16 @@
     .danger{background:#6a1e1e}
 
     .lifelines{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-    .lifelines button{flex:1;min-width:45%}
+    .lifelines button {
+                        flex:1;
+                        min-width:45%;
+                        background:#2a4b9a;   /* blue background */
+                        color:#fff;           /* white text */
+                        border:none;
+                        border-radius:8px;
+                        padding:10px;
+                        font-weight:600;
+                        cursor:pointer;}
 
     #ladder{list-style:none;padding:0;margin-top:12px;font-size:14px;max-height:200px;overflow:auto}
     #ladder li{display:flex;justify-content:space-between;padding:6px;border-radius:6px;background:#0f1732;margin-bottom:4px}
@@ -337,3 +346,4 @@ $('#btnPlayAgain')?.addEventListener('click', ()=>{ show('start'); });
 
 </body>
 </html>
+
