@@ -9,49 +9,64 @@
       --bg:#0b1020;--panel:#111a33;--ink:#e8ecff;--muted:#9fb0ff;--accent:#5b8cff;--good:#19c37d;--bad:#ff6961;
     }
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;min-height:100svh;display:grid;place-items:center;background:radial-gradient(1000px 600px at 10% -10%,#1b2550,transparent),
-      radial-gradient(1000px 600px at 110% 110%,#122040,transparent),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+      radial-gradient(1000px 600px at 110% 110%,#122040,transparent),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,"Noto Sans Devanagari","Hind",sans-serif;
     }
-    .app{width:min(920px,95vw);}
-    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
-    h1{font-size:clamp(1.2rem,2.2vw+1rem,2rem);margin:0;font-weight:800;letter-spacing:.3px}
-    .badge{font-size:.8rem;color:var(--muted)}
+    .app{width:min(920px,94vw);}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap}
+    h1{font-size:clamp(1.1rem,2.2vw+1rem,1.85rem);margin:0;font-weight:800;letter-spacing:.3px}
+    .badge{font-size:.85rem;color:var(--muted)}
 
-    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.35);padding:18px}
+    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .select{appearance:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:var(--ink);padding:8px 10px;border-radius:10px;font-weight:600}
 
-    .quote{font-size:clamp(1.15rem,1.2rem + 1.2vw,1.9rem);line-height:1.4;margin:8px 0 14px;letter-spacing:.2px}
-    .quote::before,.quote::after{content:'“';color:var(--muted);}
-    .quote::after{content:'”'}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.35);padding:16px}
+
+    .quote{font-size:clamp(1.1rem,1.1rem + 1.3vw,1.9rem);line-height:1.45;margin:6px 0 12px;letter-spacing:.2px}
+    .quote::before,.quote::after{content:'“';color:var(--muted);} .quote::after{content:'”'}
 
     .choices{display:grid;grid-template-columns:1fr;gap:10px}
     @media(min-width:680px){.choices{grid-template-columns:1fr 1fr}}
 
     button.choice{
-      background:rgba(255,255,255,.06);color:var(--ink);border:1px solid rgba(255,255,255,.09);padding:14px 14px;border-radius:14px;cursor:pointer;text-align:left;font-weight:600;transition:.18s transform ease,.18s background ease,.2s border ease;outline:none
+      background:rgba(255,255,255,.06);color:var(--ink);border:1px solid rgba(255,255,255,.14);padding:14px 14px;border-radius:14px;cursor:pointer;text-align:left;font-weight:700;transition:.18s transform ease,.18s background ease,.2s border ease;outline:none;min-height:52px
     }
     button.choice:hover{transform:translateY(-1px);background:rgba(255,255,255,.09)}
-    button.choice.correct{border-color:rgba(25,195,125,.8);box-shadow:0 0 0 3px rgba(25,195,125,.2) inset}
-    button.choice.wrong{border-color:rgba(255,105,97,.85);box-shadow:0 0 0 3px rgba(255,105,97,.15) inset}
-    .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.95rem}
-    .pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);padding:6px 10px;border-radius:999px}
+    button.choice:active{transform:translateY(0)}
+    button.choice.correct{border-color:rgba(25,195,125,.9);box-shadow:0 0 0 3px rgba(25,195,125,.22) inset}
+    button.choice.wrong{border-color:rgba(255,105,97,.9);box-shadow:0 0 0 3px rgba(255,105,97,.18) inset}
 
-    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    .btn{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.18);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:700}
-    .btn:disabled{opacity:.4;cursor:not-allowed}
+    .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.95rem}
+    .pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:6px 10px;border-radius:999px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .btn{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.2);padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:800}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
 
     .result{margin-top:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
-    .result h3{margin:0 0 8px}
+    .result h3{margin:0 0 6px}
 
-    footer{margin-top:14px;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+    footer{margin-top:12px;color:var(--muted);font-size:.95rem;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
     .sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
   </style>
 </head>
 <body>
   <div class="app" role="application" aria-labelledby="title">
     <header>
-      <h1 id="title">Who Said It? <span class="badge">Constitution Edition (India)</span></h1>
-      <div class="meta"><span class="pill" id="score">Score: 0</span><span class="pill" id="streak">Streak: 0</span><span class="pill" id="qprog">Q1</span></div>
+      <div>
+        <h1 id="title">Who Said It? <span class="badge">Constitution Edition (India)</span></h1>
+        <div class="meta"><span class="pill" id="score">Score: 0</span><span class="pill" id="streak">Streak: 0</span><span class="pill" id="qprog">Q1</span></div>
+      </div>
+      <div class="toolbar">
+        <label class="sr-only" for="lang">Language</label>
+        <select id="lang" class="select" aria-label="Language">
+          <option value="en" selected>English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="mix">English + हिन्दी</option>
+        </select>
+      </div>
     </header>
 
     <section class="card" aria-live="polite">
@@ -71,72 +86,129 @@
     </section>
 
     <footer>
-      <div>
-        Tip: press <strong>1‑4</strong> to answer quickly. Quotes are provided for learning; if you notice a misattribution, please report it.
-      </div>
-      <label><input type="checkbox" id="hindiToggle" /> Show Hindi translations (where available)</label>
+      <div id="tips">Tip: press <strong>1‑4</strong> to answer quickly. Quotes are for learning; report misattributions.</div>
     </footer>
   </div>
 
   <script>
-    // ———————————————— Data
-    // Each item: {quote, author, choices[], hint, context, hi?}
+    // ———————————————— i18n strings for UI
+    const UI = {
+      en: {
+        title: "Who Said It?",
+        badge: "Constitution Edition (India)",
+        score: s=>`Score: ${s}`,
+        streak: s=>`Streak: ${s}`,
+        qprog: (i,n)=>`Q${i}/${n}`,
+        hint: "Hint",
+        skip: "Skip",
+        again: "Play again",
+        correct: "✅ Correct!",
+        wrong: author => `❌ Not quite — It was ${author}.`,
+        final: (score,total)=>`Great run! Final score: ${score} / ${total}`,
+        tips: 'Tip: press 1–4 to answer quickly. Quotes are for learning; report misattributions.'
+      },
+      hi: {
+        title: "किसने कहा?",
+        badge: "संविधान संस्करण (भारत)",
+        score: s=>`अंक: ${s}`,
+        streak: s=>`लगातार सही: ${s}`,
+        qprog: (i,n)=>`प्रश्न ${i}/${n}`,
+        hint: "संकेत",
+        skip: "आगे बढ़ें",
+        again: "फिर से खेलें",
+        correct: "✅ सही जवाब!",
+        wrong: author => `❌ ठीक नहीं — सही उत्तर: ${author}`,
+        final: (score,total)=>`शानदार खेल! अंतिम स्कोर: ${score} / ${total}`,
+        tips: 'युक्ति: तेज़ उत्तर के लिए 1–4 दबाएँ। उद्धरण केवल सीखने के लिए हैं।'
+      }
+    };
+
+    // ———————————————— Data (EN + HI)
+    // Each item: {quoteEN, quoteHI, authorEN, authorHI, choicesEN[], choicesHI[], hintEN, hintHI, contextEN, contextHI}
     const BANK = [
       {
-        quote: "The Constitution is not a mere lawyers' document; it is a vehicle of life.",
-        author: "B. R. Ambedkar",
-        choices: ["B. R. Ambedkar","Jawaharlal Nehru","M. K. Gandhi","Sardar Vallabhbhai Patel"],
-        hint: "Chief architect of the Indian Constitution.",
-        context: "Ambedkar emphasised that the Constitution must respond to society’s needs, not just legal technicalities.",
-        hi: "संविधान केवल वकीलों का दस्तावेज़ नहीं; यह जीवन का वाहन है।"
+        quoteEN: "The Constitution is not a mere lawyers' document; it is a vehicle of life.",
+        quoteHI: "संविधान केवल वकीलों का दस्तावेज़ नहीं; यह जीवन का वाहन है।",
+        authorEN: "B. R. Ambedkar",
+        authorHI: "डॉ. भीमराव आंबेडकर",
+        choicesEN: ["B. R. Ambedkar","Jawaharlal Nehru","M. K. Gandhi","Sardar Vallabhbhai Patel"],
+        choicesHI: ["डॉ. भीमराव आंबेडकर","जवाहरलाल नेहरू","महात्मा गांधी","सरदार वल्लभभाई पटेल"],
+        hintEN: "Chief architect of the Indian Constitution.",
+        hintHI: "भारतीय संविधान के मुख्य शिल्पी।",
+        contextEN: "Ambedkar emphasised that the Constitution must respond to society’s needs, not just legal technicalities.",
+        contextHI: "आंबेडकर ने कहा कि संविधान केवल कानूनी तकनीकों तक सीमित नहीं, समाज की जरूरतों का उत्तर होना चाहिए।"
       },
       {
-        quote: "A moment comes, which comes but rarely in history, when we step out from the old to the new.",
-        author: "Jawaharlal Nehru",
-        choices: ["Jawaharlal Nehru","Rajendra Prasad","Sarvepalli Radhakrishnan","Lal Bahadur Shastri"],
-        hint: "Delivered on 14–15 August 1947.",
-        context: "From Nehru’s ‘Tryst with Destiny’ speech as India became independent.",
-        hi: "इतिहास में विरल क्षण आता है जब हम पुराने से नए की ओर कदम बढ़ाते हैं।"
+        quoteEN: "A moment comes, which comes but rarely in history, when we step out from the old to the new.",
+        quoteHI: "इतिहास में विरल क्षण आता है जब हम पुराने से नए की ओर कदम बढ़ाते हैं।",
+        authorEN: "Jawaharlal Nehru",
+        authorHI: "जवाहरलाल नेहरू",
+        choicesEN: ["Jawaharlal Nehru","Rajendra Prasad","Sarvepalli Radhakrishnan","Lal Bahadur Shastri"],
+        choicesHI: ["जवाहरलाल नेहरू","डॉ. राजेंद्र प्रसाद","डॉ. सर्वपल्ली राधाकृष्णन","लाल बहादुर शास्त्री"],
+        hintEN: "Delivered on 14–15 August 1947.",
+        hintHI: "14–15 अगस्त 1947 का भाषण।",
+        contextEN: "From Nehru’s ‘Tryst with Destiny’ speech as India became independent.",
+        contextHI: "भारत की आज़ादी की पूर्व-संध्या पर नेहरू के ‘ट्रिस्ट विद डेस्टिनी’ भाषण से।"
       },
       {
-        quote: "Swaraj is my birthright and I shall have it.",
-        author: "Bal Gangadhar Tilak",
-        choices: ["Bal Gangadhar Tilak","Subhas Chandra Bose","Bhagat Singh","M. K. Gandhi"],
-        hint: "Freedom fighter known as Lokmanya.",
-        context: "Tilak popularised the demand for self‑rule decades before Independence.",
-        hi: "सुराज मेरा जन्मसिद्ध अधिकार है और मैं इसे लेकर रहूँगा।"
+        quoteEN: "Swaraj is my birthright and I shall have it.",
+        quoteHI: "सुराज मेरा जन्मसिद्ध अधिकार है और मैं इसे लेकर रहूँगा।",
+        authorEN: "Bal Gangadhar Tilak",
+        authorHI: "बाल गंगाधर तिलक",
+        choicesEN: ["Bal Gangadhar Tilak","Subhas Chandra Bose","Bhagat Singh","M. K. Gandhi"],
+        choicesHI: ["बाल गंगाधर तिलक","सुभाषचंद्र बोस","भगत सिंह","महात्मा गांधी"],
+        hintEN: "Freedom fighter known as Lokmanya.",
+        hintHI: "लोकमान्य नाम से प्रसिद्ध स्वतंत्रता सेनानी।",
+        contextEN: "Tilak popularised the demand for self‑rule decades before Independence.",
+        contextHI: "तिलक ने स्वराज की माँग को आज़ादी से बहुत पहले लोकप्रिय बनाया।"
       },
       {
-        quote: "Give me blood, and I will give you freedom!",
-        author: "Subhas Chandra Bose",
-        choices: ["Subhas Chandra Bose","Sardar Patel","Jawaharlal Nehru","Ram Manohar Lohia"],
-        hint: "Leader of the Indian National Army.",
-        context: "Bose’s call to energise the struggle for Independence.",
-        hi: "मुझे खून दो, मैं तुम्हें आज़ादी दूँगा!"
+        quoteEN: "Give me blood, and I will give you freedom!",
+        quoteHI: "मुझे खून दो, मैं तुम्हें आज़ादी दूँगा!",
+        authorEN: "Subhas Chandra Bose",
+        authorHI: "सुभाषचंद्र बोस",
+        choicesEN: ["Subhas Chandra Bose","Sardar Patel","Jawaharlal Nehru","Ram Manohar Lohia"],
+        choicesHI: ["सुभाषचंद्र बोस","सरदार पटेल","जवाहरलाल नेहरू","राम मनोहर लोहिया"],
+        hintEN: "Leader of the Indian National Army.",
+        hintHI: "आज़ाद हिंद फ़ौज के नेता।",
+        contextEN: "Bose’s call to energise the struggle for Independence.",
+        contextHI: "बोस का जोशीला आह्वान जिसने स्वतंत्रता संग्राम में ऊर्जा भरी।"
       },
       {
-        quote: "I measure the progress of a community by the degree of progress which women have achieved.",
-        author: "B. R. Ambedkar",
-        choices: ["B. R. Ambedkar","Savitribai Phule","M. K. Gandhi","Sarojini Naidu"],
-        hint: "Jurist, social reformer and first Law Minister of India.",
-        context: "Ambedkar linked social justice with women’s empowerment.",
-        hi: "मैं किसी समाज की प्रगति को उसकी महिलाओं की प्रगति से मापता हूँ।"
+        quoteEN: "I measure the progress of a community by the degree of progress which women have achieved.",
+        quoteHI: "मैं किसी समाज की प्रगति को उसकी महिलाओं की प्रगति से मापता हूँ।",
+        authorEN: "B. R. Ambedkar",
+        authorHI: "डॉ. भीमराव आंबेडकर",
+        choicesEN: ["B. R. Ambedkar","Savitribai Phule","M. K. Gandhi","Sarojini Naidu"],
+        choicesHI: ["डॉ. भीमराव आंबेडकर","सावित्रीबाई फुले","महात्मा गांधी","सरोजिनी नायडू"],
+        hintEN: "Jurist, social reformer and first Law Minister of India.",
+        hintHI: "न्यायविद, समाज सुधारक और स्वतंत्र भारत के पहले क़ानून मंत्री।",
+        contextEN: "Ambedkar linked social justice with women’s empowerment.",
+        contextHI: "आंबेडकर ने सामाजिक न्याय को महिला सशक्तिकरण से जोड़ा।"
       },
       {
-        quote: "My only desire is that India should be a good producer and no one should be hungry, shedding tears for food in the country.",
-        author: "Sardar Vallabhbhai Patel",
-        choices: ["Sardar Vallabhbhai Patel","M. K. Gandhi","C. Rajagopalachari","Syama Prasad Mookerjee"],
-        hint: "The ‘Iron Man of India’.",
-        context: "Patel spoke often about unity, food security and nation‑building.",
-        hi: "मेरी एक ही इच्छा है कि भारत एक अच्छा उत्पादक बने और देश में कोई भूखा न रहे।"
+        quoteEN: "My only desire is that India should be a good producer and no one should be hungry, shedding tears for food in the country.",
+        quoteHI: "मेरी एक ही इच्छा है कि भारत एक अच्छा उत्पादक बने और देश में कोई भूखा न रहे।",
+        authorEN: "Sardar Vallabhbhai Patel",
+        authorHI: "सरदार वल्लभभाई पटेल",
+        choicesEN: ["Sardar Vallabhbhai Patel","M. K. Gandhi","C. Rajagopalachari","Syama Prasad Mookerjee"],
+        choicesHI: ["सरदार वल्लभभाई पटेल","महात्मा गांधी","सी. राजगोपालाचारी","श्यामा प्रसाद मुखर्जी"],
+        hintEN: "The ‘Iron Man of India’.",
+        hintHI: "'लौह पुरुष'।",
+        contextEN: "Patel spoke often about unity, food security and nation‑building.",
+        contextHI: "पटेल ने अक्सर एकता, खाद्य सुरक्षा और राष्ट्र निर्माण पर बल दिया।"
       },
       {
-        quote: "Education is the manifestation of the perfection already in man.",
-        author: "Swami Vivekananda",
-        choices: ["Swami Vivekananda","Rabindranath Tagore","Abdul Kalam Azad","Dr. S. Radhakrishnan"],
-        hint: "Spiritual leader who inspired youth and national awakening.",
-        context: "While not a constitutional framer, his ideas shaped civic spirit and duty.",
-        hi: "शिक्षा मनुष्य में निहित पूर्णता का प्रकटीकरण है।"
+        quoteEN: "Education is the manifestation of the perfection already in man.",
+        quoteHI: "शिक्षा मनुष्य में निहित पूर्णता का प्रकटीकरण है।",
+        authorEN: "Swami Vivekananda",
+        authorHI: "स्वामी विवेकानंद",
+        choicesEN: ["Swami Vivekananda","Rabindranath Tagore","Abdul Kalam Azad","Dr. S. Radhakrishnan"],
+        choicesHI: ["स्वामी विवेकानंद","रवींद्रनाथ ठाकुर","अबुल कलाम आज़ाद","डॉ. एस. राधाकृष्णन"],
+        hintEN: "Spiritual leader who inspired youth and national awakening.",
+        hintHI: "युवा और राष्ट्रीय चेतना को प्रेरित करने वाले आध्यात्मिक नेता।",
+        contextEN: "While not a constitutional framer, his ideas shaped civic spirit and duty.",
+        contextHI: "भले ही वे संवैधानिक निर्माता नहीं थे, पर उनकी विचारधारा नागरिक चेतना और कर्तव्यबोध को आकार देती है।"
       }
     ];
 
@@ -145,44 +217,63 @@
     let idx = 0, score = 0, streak = 0, locked = false;
     const $ = sel => document.querySelector(sel);
 
-    function shuffle(arr){
-      for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;
-    }
+    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr; }
+
+    function activeLang(){ return $('#lang').value; }
+
+    function t(key,...args){ const L = UI[activeLang()==='mix'?'en':activeLang()] || UI.en; const val=L[key]; return (typeof val==='function')?val(...args):val; }
 
     function init(){
       order = shuffle([...Array(BANK.length).keys()]);
       idx = 0; score = 0; streak = 0; locked = false;
       $('#againBtn').disabled = true;
       $('#explain').hidden = true;
+      renderHeader();
       render();
       updateHUD();
     }
 
+    function renderHeader(){
+      const lang = activeLang();
+      const title = (lang==='hi')?UI.hi.title:(lang==='mix'?UI.en.title+" / "+UI.hi.title:UI.en.title);
+      const badge = (lang==='hi')?UI.hi.badge:(lang==='mix'?UI.en.badge+" / "+UI.hi.badge:UI.en.badge);
+      document.querySelector('h1').innerHTML = `${title} <span class="badge">${badge}</span>`;
+      $('#hintBtn').textContent = t('hint');
+      $('#skipBtn').textContent = t('skip');
+      $('#againBtn').textContent = t('again');
+      $('#tips').textContent = t('tips');
+    }
+
     function updateHUD(){
-      $('#score').textContent = `Score: ${score}`;
-      $('#streak').textContent = `Streak: ${streak}`;
-      $('#qprog').textContent = `Q${idx+1}/${BANK.length}`;
+      $('#score').textContent = t('score',score);
+      $('#streak').textContent = t('streak',streak);
+      $('#qprog').textContent = t('qprog',idx+1,BANK.length);
     }
 
     function render(){
       const q = BANK[order[idx]];
-      const showHindi = $('#hindiToggle').checked && q.hi;
-      $('#quote').textContent = showHindi ? q.hi : q.quote;
+      const lang = activeLang();
+      const quote = (lang==='hi')?q.quoteHI:(lang==='mix'?`${q.quoteEN} / ${q.quoteHI}`:q.quoteEN);
+      $('#quote').textContent = quote;
 
       const choices = $('#choices');
       choices.innerHTML = '';
 
-      q.choices.forEach((name, i)=>{
+      const optsEN = shuffle([...q.choicesEN]);
+      const optsHI = q.choicesHI;
+      const opts = (lang==='hi')?optsHI:(lang==='mix'?optsEN.map((e,i)=>`${e} / ${optsHI[q.choicesEN.indexOf(e)]}`):optsEN);
+
+      opts.forEach((label, i)=>{
         const btn = document.createElement('button');
         btn.className = 'choice';
         btn.type = 'button';
         btn.setAttribute('data-i', i);
-        btn.innerHTML = `<span class="sr-only">Choice ${i+1}: </span>${name}`;
-        btn.addEventListener('click', ()=> answer(name));
+        btn.innerHTML = `<span class="sr-only">Choice ${i+1}: </span>${label}`;
+        btn.addEventListener('click', ()=> answer(label));
         choices.appendChild(btn);
       });
 
-      $('#hintBtn').onclick = ()=> showHint(q.hint);
+      $('#hintBtn').onclick = ()=> showHint(lang==='hi'?q.hintHI:q.hintEN);
       $('#skipBtn').onclick = ()=> nextQuestion(false);
       $('#againBtn').onclick = init;
       locked = false;
@@ -192,38 +283,41 @@
     function showHint(text){
       const box = $('#explain');
       box.hidden = false;
-      $('#verdict').textContent = 'Hint';
+      $('#verdict').textContent = t('hint');
       $('#context').textContent = text;
     }
 
-    function answer(name){
+    function answer(chosenLabel){
       if(locked) return; locked = true;
       const q = BANK[order[idx]];
-      const correct = name === q.author;
+      const lang = activeLang();
+      const correctAuthor = (lang==='hi')?q.authorHI:(lang==='mix'?`${q.authorEN} / ${q.authorHI}`:q.authorEN);
       const nodes = [...document.querySelectorAll('button.choice')];
+
       nodes.forEach(n=>{
-        if(n.textContent.trim() === q.author) n.classList.add('correct');
-        if(n.textContent.trim() === name && !correct) n.classList.add('wrong');
+        const raw = n.textContent.trim();
+        if(raw===correctAuthor) n.classList.add('correct');
+        if(raw===chosenLabel && raw!==correctAuthor) n.classList.add('wrong');
         n.disabled = true;
       });
 
       const box = $('#explain');
       box.hidden = false;
-      $('#verdict').textContent = correct ? '✅ Correct!' : `❌ Not quite — It was ${q.author}.`;
-      $('#context').textContent = q.context;
+      const verdict = (chosenLabel===correctAuthor) ? t('correct') : t('wrong',correctAuthor);
+      $('#verdict').textContent = verdict;
+      $('#context').textContent = (lang==='hi')?q.contextHI:q.contextEN;
 
-      if(correct){ score += 10; streak += 1; }
-      else { streak = 0; }
+      if(chosenLabel===correctAuthor){ score += 10; streak += 1; } else { streak = 0; }
       updateHUD();
 
-      setTimeout(()=> nextQuestion(true), 900);
+      setTimeout(()=> nextQuestion(true), 1000);
     }
 
-    function nextQuestion(fromAnswer){
+    function nextQuestion(){
       if(idx < order.length - 1){
         idx++; render(); updateHUD();
       } else {
-        $('#quote').textContent = `Great run! Final score: ${score} / ${BANK.length*10}`;
+        $('#quote').textContent = t('final',score,BANK.length*10);
         $('#choices').innerHTML = '';
         $('#againBtn').disabled = false;
         $('#explain').hidden = true;
@@ -242,8 +336,8 @@
       else if(k==='r'){ $('#againBtn').click(); }
     });
 
-    // Hindi toggle re-render
-    $('#hindiToggle')?.addEventListener('change', ()=> render());
+    // Language switch
+    document.getElementById('lang').addEventListener('change',()=>{ renderHeader(); render(); updateHUD(); });
 
     // Start
     init();
