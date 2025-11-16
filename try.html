@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Brain Boost: Enhanced Games</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom game theme and font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+    
+    :root {
+      --primary-color: #4f46e5; /* Indigo-600 */
+      --secondary-color: #10b981; /* Emerald-500 */
+      --bg-dark: #0f172a; /* Slate-900 */
+      --card-dark: #1e293b; /* Slate-800 */
+      --text-light: #f8fafc; /* Slate-50 */
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      transition: background-color 0.3s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    /* Core Screen Layout */
+    .screen {
+      max-width: 480px; /* Optimal width for game UI */
+      width: 100%;
+      min-height: 600px;
+      background-color: var(--card-dark);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      padding: 1.5rem;
+      transition: opacity 0.3s ease-in-out;
+      display: none;
+      position: relative;
+    }
+    
+    .screen.active {
+      display: block;
+    }
+
+    /* --- Memory Game (MG) Styles --- */
+    #mgGrid {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      background-color: #1e293b;
+      border-radius: 10px;
+    }
+    .mg-card {
+      aspect-ratio: 1 / 1; /* Maintain square shape (UX: Consistency) */
+      background-color: #475569;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--text-light);
+      position: relative; /* Needed for inner positioning */
+      transform-style: preserve-3d;
+      transition: transform 0.4s, box-shadow 0.2s, background-color 0.2s;
+      box-shadow: 0 4px #334155; /* Subtle 3D effect */
+    }
+    .mg-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px #334155;
+    }
+
+    .mg-card.flipped {
+      transform: rotateY(0deg); /* Card face is visible */
+      background-color: var(--primary-color);
+      box-shadow: 0 4px #312e81;
+      pointer-events: none;
+    }
+
+    /* Fix 1: Make sure the content (icon) is visible on flip */
+    .mg-card-inner {
+      position: absolute;
+      backface-visibility: hidden;
+      transform: rotateY(180deg); /* Start hidden/reversed */
+      transition: transform 0.4s;
+    }
+    .mg-card.flipped .mg-card-inner {
+      transform: rotateY(0deg); /* Show content when flipped */
+    }
+    
+    .mg-card.matched {
+      background-color: var(--secondary-color);
+      box-shadow: 0 4px #065f46;
+      pointer-events: none;
+      animation: pulseMatch 0.5s; /* Micro-interaction: visual feedback */
+    }
+
+    .mg-card.matched .mg-card-inner {
+      color: var(--bg-dark); /* Ensure contrast */
+    }
+
+    /* --- Math Quiz (MQ) Styles --- */
+    #mqQuestion {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--secondary-color);
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .mq-option {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
+      background-color: #334155;
+      color: var(--text-light);
+      box-shadow: 0 3px #1e293b;
+    }
+    .mq-option:hover {
+      background-color: #475569;
+      transform: translateY(-1px);
+    }
+    .mq-option.correct {
+      background-color: #10b981; /* Success color */
+      color: var(--bg-dark);
+      box-shadow: 0 3px #065f46;
+      animation: flashSuccess 0.5s ease-out; /* Micro-interaction: success flash */
+      pointer-events: none;
+    }
+    .mq-option.wrong {
+      background-color: #ef4444; /* Danger color */
+      color: var(--text-light);
+      box-shadow: 0 3px #991b1b;
+      animation: flashDanger 0.5s ease-out; /* Micro-interaction: danger flash */
+      pointer-events: none;
+    }
+
+    /* --- General UI/UX Enhancements --- */
+    .stat-box {
+      background-color: #1e293b;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: #94a3b8;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--text-light);
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--primary-fore);
+      font-weight: 700;
+      transition: background-color 0.2s, transform 0.1s;
+      box-shadow: 0 5px #312e81; /* 3D press effect */
+    }
+    .btn-primary:hover {
+      background-color: #6366f1;
+    }
+    .btn-primary:active {
+      transform: translateY(2px);
+      box-shadow: 0 3px #312e81;
+    }
+    
+    /* Keyframe Animations for Micro-interactions */
+    @keyframes pulseMatch {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes flashSuccess {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); box-shadow: 0 0 10px #10b981; }
+      100% { transform: scale(1); }
+    }
+    @keyframes flashDanger {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); box-shadow: 0 0 10px #ef4444; }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="scrMenu" class="screen active">
+  <div class="h-full flex flex-col justify-center items-center p-6">
+    <h1 class="text-5xl font-black text-white mb-4">Brain Boost</h1>
+    <p class="text-xl text-indigo-400 mb-10 text-center">Challenge your mind with quick games.</p>
+    
+    <div class="space-y-6 w-full max-w-xs">
+      <!-- Game 1: Memory Match - Clarity & Imagery -->
+      <div 
+        class="bg-indigo-600 p-6 rounded-xl shadow-lg cursor-pointer hover:bg-indigo-500 transition-all btn-primary"
+        onclick="show(scrMg); mgStartGame()"
+      >
+        <div class="text-2xl font-bold text-white mb-1">Memory Match</div>
+        <p class="text-indigo-200">Test your recall skills.</p>
+      </div>
+
+      <!-- Game 2: Math Quiz - Clarity & Imagery -->
+      <div 
+        class="bg-emerald-600 p-6 rounded-xl shadow-lg cursor-pointer hover:bg-emerald-500 transition-all btn-primary"
+        onclick="show(scrMq); mqStartGame()"
+      >
+        <div class="text-2xl font-bold text-white mb-1">Math Blitz</div>
+        <p class="text-emerald-200">Fast mental arithmetic.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="scrMg" class="screen">
+  <div class="flex flex-col h-full">
+    
+    <!-- Top Bar: Hierarchy & Metrics -->
+    <div class="flex justify-between items-center mb-6">
+      <button id="mgBack" class="text-indigo-400 hover:text-white transition duration-200 p-2 rounded-full" aria-label="Back to Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h2 class="text-2xl font-black text-white">Memory Match</h2>
+      <div class="w-10"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="stat-box">
+        <div class="stat-label">Pairs</div>
+        <div id="mgMatched" class="stat-value text-secondary-color">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Time</div>
+        <div id="mgTime" class="stat-value">0</div>
+      </div>
+    </div>
+
+    <!-- Game Grid: Main Focus -->
+    <div id="mgGrid" class="flex-grow">
+      <!-- Cards generated here -->
+    </div>
+
+    <!-- Control Buttons -->
+    <button id="mgPlay" class="w-full mt-6 py-3 rounded-xl btn-primary">Start Game</button>
+    <button id="mgRestart" class="w-full mt-3 py-3 rounded-xl bg-gray-600 text-white font-semibold hover:bg-gray-500 transition hidden">Restart Game</button>
+  </div>
+</div>
+
+<div id="scrMq" class="screen">
+  <div class="flex flex-col h-full">
+
+    <!-- Top Bar: Hierarchy & Metrics -->
+    <div class="flex justify-between items-center mb-6">
+      <button id="mqBack" class="text-indigo-400 hover:text-white transition duration-200 p-2 rounded-full" aria-label="Back to Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h2 class="text-2xl font-black text-white">Math Blitz</h2>
+      <div class="w-10"></div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="stat-box">
+        <div class="stat-label">Score</div>
+        <div id="mqScore" class="stat-value text-secondary-color">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Level</div>
+        <select id="level" class="bg-transparent border-none text-xl font-bold text-white p-0 text-center focus:outline-none w-full">
+          <!-- Options added by JS -->
+        </select>
+      </div>
+    </div>
+    
+    <div id="mqQuestion" class="flex-grow flex items-center justify-center p-4 text-center">
+      <p class="text-2xl text-gray-400">Press Start to begin.</p>
+    </div>
+
+    <!-- Options Grid: Touch Targets & Hierarchy -->
+    <div id="mqOpts" class="grid grid-cols-2 gap-4 mb-6">
+      <!-- Buttons generated here -->
+    </div>
+
+    <!-- Control Buttons -->
+    <button id="mqPlay" class="w-full mt-6 py-3 rounded-xl btn-primary">Start Game</button>
+    <button id="mqRestart" class="w-full mt-3 py-3 rounded-xl bg-gray-600 text-white font-semibold hover:bg-gray-500 transition hidden">Restart Game</button>
+
+  </div>
+</div>
+
+<!-- JavaScript Logic (Refined) -->
+<script>
+  // --- Global State & Setup ---
+  const scrMenu = document.getElementById('scrMenu');
+  const scrMg = document.getElementById('scrMg');
+  const scrMq = document.getElementById('scrMq');
+  const screens = [scrMenu, scrMg, scrMq];
+
+  function show(screenToShow) {
+    screens.forEach(s => {
+      s.classList.remove('active');
+    });
+    screenToShow.classList.add('active');
+  }
+  
+  // Vibrate function (Micro-interaction: Haptic Feedback)
+  function vibrate(ms) {
+    if (window.navigator.vibrate) {
+      window.navigator.vibrate(ms);
+    }
+  }
+
+  // --- MATH QUIZ (MQ) Logic ---
+  const mqPlay = document.getElementById('mqPlay');
+  const mqRestart = document.getElementById('mqRestart');
+  const mqQuestion = document.getElementById('mqQuestion');
+  const mqOptsEl = document.getElementById('mqOpts');
+  const levelSelect = document.getElementById('level');
+  const scoreEl = document.getElementById('mqScore');
+  const mqBack = document.getElementById('mqBack');
+
+  let mqScore = 0;
+  let mqLock = false;
+  let mqQuestionData = {};
+  let preferred = 'add-easy';
+
+  const mqLevels = {
+    'add-easy': { name: 'Add (Easy)', range: [1, 10], type: 'int', coverage: 0 },
+    'add-medium': { name: 'Add (Medium)', range: [10, 50], type: 'int', coverage: 0 },
+    'sub-easy': { name: 'Sub (Easy)', range: [10, 20], type: 'int', type2: 'int', coverage: 0 },
+    'mul-easy': { name: 'Mult (Easy)', range: [1, 9], type: 'int', coverage: 0 },
+    'div-medium': { name: 'Div (Medium)', range: [1, 10], type: 'dec2', coverage: 0, divRange: [50, 100] },
+  };
+  
+  // Populate Level Select (UX: Configuration Clarity)
+  Object.keys(mqLevels).forEach(key => {
+    const option = document.createElement('option');
+    option.value = key;
+    option.textContent = mqLevels[key].name;
+    option.classList.add('bg-slate-700', 'text-white');
+    levelSelect.appendChild(option);
+  });
+  preferred = levelSelect.value;
+
+  // FIX 2: Add event listener to update 'preferred' when level changes
+  levelSelect.addEventListener('change', e => { 
+      preferred = e.target.value; 
+      // Restart the game flow to apply new level immediately
+      if (!mqPlay.classList.contains('hidden')) {
+          mqRestartGame(); 
+      }
+  });
+
+
+  function consumeCoverageIfUsed(lvl) { /* Logic remains the same */ }
+
+  function getQuestion() {
+    const lvl = mqLevels[preferred];
+    let a, b, op, answer, kind;
+
+    if (preferred.startsWith('add')) {
+      a = Math.floor(Math.random() * lvl.range[1]) + lvl.range[0];
+      b = Math.floor(Math.random() * lvl.range[1]) + lvl.range[0];
+      op = '+';
+      answer = a + b;
+      kind = lvl.type;
+    } else if (preferred.startsWith('sub')) {
+      a = Math.floor(Math.random() * (lvl.range[1] - lvl.range[0])) + lvl.range[0];
+      b = Math.floor(Math.random() * a);
+      op = '-';
+      answer = a - b;
+      kind = lvl.type;
+    } else if (preferred.startsWith('mul')) {
+      a = Math.floor(Math.random() * lvl.range[1]) + lvl.range[0];
+      b = Math.floor(Math.random() * lvl.range[1]) + lvl.range[0];
+      op = '×';
+      answer = a * b;
+      kind = lvl.type;
+    } else if (preferred.startsWith('div')) {
+      let divisor = Math.floor(Math.random() * lvl.range[1]) + lvl.range[0];
+      let dividend = Math.floor(Math.random() * (lvl.divRange[1] - lvl.divRange[0])) + lvl.divRange[0];
+      a = dividend;
+      b = divisor;
+      op = '÷';
+      answer = a / b;
+      kind = lvl.type;
+    }
+
+    const questionText = `${a} ${op} ${b}`;
+    let choices = generateChoices(answer, kind);
+
+    return { questionText, answer, kind, choices, lvl: preferred };
+  }
+
+  function generateChoices(correctAnswer, kind) {
+    const choices = new Set();
+    choices.add(fmt(correctAnswer, kind));
+    while (choices.size < 4) {
+      let variation;
+      if (kind === 'int') {
+        variation = correctAnswer + Math.floor(Math.random() * 6) - 3;
+        if (variation < 0) variation = correctAnswer + 1;
+      } else { // decimal
+        variation = correctAnswer + (Math.random() * 0.2) - 0.1;
+      }
+      choices.add(fmt(variation, kind));
+    }
+    return Array.from(choices).sort(() => Math.random() - 0.5);
+  }
+
+  function fmt(val, kind) {
+    const num = parseFloat(val);
+    if (kind === 'dec1') return num.toFixed(1);
+    if (kind === 'dec2') return num.toFixed(2);
+    return num.toFixed(0);
+  }
+
+  function eq(a, b, kind) {
+    const tolerance = 0.01;
+    const nA = parseFloat(a);
+    const nB = parseFloat(b);
+    if (kind === 'dec1' || kind === 'dec2') {
+      return Math.abs(nA - nB) < tolerance;
+    }
+    return nA === nB;
+  }
+
+  function handlePick(btn, val, answer, kind, lvl) {
+    if (mqLock) return;
+    mqLock = true;
+
+    const formattedAnswer = fmt(answer, kind);
+    const correct = eq(val, formattedAnswer, kind);
+
+    // UX: Enhanced Visual Feedback
+    btn.classList.add(correct ? 'correct' : 'wrong');
+    if (correct) {
+      mqScore++;
+      scoreEl.textContent = mqScore;
+      vibrate(25);
+    } else {
+      vibrate(60);
+      // Highlight correct answer
+      [...mqOptsEl.children].forEach(b => {
+        if (eq(b.textContent, formattedAnswer, kind)) b.classList.add('correct');
+      });
+    }
+
+    consumeCoverageIfUsed(lvl);
+    setTimeout(() => { mqLock = false; nextQuestion(); }, correct ? 600 : 1000);
+  }
+
+  function nextQuestion() {
+    mqQuestionData = getQuestion();
+    mqQuestion.innerHTML = mqQuestionData.questionText;
+    mqOptsEl.innerHTML = ''; // Clear options
+
+    mqQuestionData.choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.textContent = choice;
+      btn.classList.add('mq-option', 'active:translate-y-0.5', 'active:shadow-none');
+      btn.onclick = () => handlePick(btn, choice, mqQuestionData.answer, mqQuestionData.kind, mqQuestionData.lvl);
+      mqOptsEl.appendChild(btn);
+    });
+  }
+
+  function mqStartGame() {
+    mqScore = 0;
+    scoreEl.textContent = '0';
+    mqPlay.classList.add('hidden');
+    mqRestart.classList.remove('hidden');
+    levelSelect.disabled = true;
+    nextQuestion();
+  }
+
+  function mqRestartGame() {
+    levelSelect.disabled = false;
+    mqPlay.classList.remove('hidden');
+    mqRestart.classList.add('hidden');
+    mqQuestion.innerHTML = '<p class="text-2xl text-gray-400">Press Start to begin.</p>';
+    mqOptsEl.innerHTML = '';
+  }
+
+  mqPlay.addEventListener('click', mqStartGame);
+  mqRestart.addEventListener('click', mqRestartGame);
+  mqBack.addEventListener('click', () => { mqRestartGame(); show(scrMenu); });
+
+
+  // --- MEMORY GAME (MG) Logic ---
+  const mgPlay = document.getElementById('mgPlay');
+  const mgRestart = document.getElementById('mgRestart');
+  const mgGrid = document.getElementById('mgGrid');
+  const mgMatchedEl = document.getElementById('mgMatched');
+  const mgTimeEl = document.getElementById('mgTime');
+  const mgBack = document.getElementById('mgBack');
+
+  let mgTimer;
+  let mgTime = 0;
+  let mgMatched = 0;
+  let mgLock = false;
+  let mgFlipped = [];
+
+  const mgIcons = ['🚀', '🌍', '💡', '🌟', '🔑', '🍎', '🌈', '🧩', '⚡', '🤖'];
+
+  function createGrid(size) {
+    const pairs = mgIcons.slice(0, size * size / 2);
+    const tiles = [...pairs, ...pairs].sort(() => Math.random() - 0.5);
+
+    mgGrid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    mgGrid.innerHTML = '';
+    
+    tiles.forEach((tile, index) => {
+      const card = document.createElement('div');
+      card.classList.add('mg-card');
+      card.dataset.value = tile;
+      card.dataset.index = index;
+
+      const inner = document.createElement('div');
+      inner.classList.add('mg-card-inner');
+      inner.textContent = tile;
+      
+      card.appendChild(inner);
+      mgGrid.appendChild(card);
+
+      card.addEventListener('click', () => handleFlip(card));
+    });
+  }
+
+  function handleFlip(card) {
+    if (mgLock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+    // Remove the initial 'transform: rotateY(180deg)' applied by CSS when not flipped
+    card.classList.add('flipped'); 
+    mgFlipped.push(card);
+    vibrate(10); // Haptic feedback on flip
+
+    if (mgFlipped.length === 2) {
+      mgLock = true;
+      const [card1, card2] = mgFlipped;
+
+      if (card1.dataset.value === card2.dataset.value) {
+        // Match Found (UX: Success Feedback)
+        setTimeout(() => {
+          card1.classList.add('matched');
+          card2.classList.add('matched');
+          mgMatched++;
+          mgMatchedEl.textContent = mgMatched;
+          
+          if (mgMatched === mgGrid.children.length / 2) {
+            clearInterval(mgTimer);
+            alertUser('Game Over!', `You finished in ${mgTime} seconds with ${mgMatched} pairs matched!`, 'success');
+            mgPlay.classList.add('hidden');
+            mgRestart.classList.remove('hidden');
+          }
+          mgFlipped = [];
+          mgLock = false;
+        }, 500);
+      } else {
+        // No Match (UX: Error/Failure Feedback)
+        setTimeout(() => {
+          card1.classList.remove('flipped');
+          card2.classList.remove('flipped');
+          mgFlipped = [];
+          mgLock = false;
+        }, 1000);
+      }
+    }
+  }
+
+  function mgStartGame() {
+    mgTime = 0;
+    mgMatched = 0;
+    mgMatchedEl.textContent = '0';
+    mgTimeEl.textContent = '0';
+    mgPlay.classList.add('hidden');
+    mgRestart.classList.remove('hidden');
+    
+    createGrid(4); // Start with a 4x4 grid
+    clearInterval(mgTimer);
+    mgTimer = setInterval(() => {
+      mgTime++;
+      mgTimeEl.textContent = mgTime;
+    }, 1000);
+  }
+
+  function mgRestartGame() {
+    clearInterval(mgTimer);
+    mgPlay.classList.remove('hidden');
+    mgRestart.classList.add('hidden');
+    mgTime = 0;
+    mgMatched = 0;
+    mgMatchedEl.textContent = '0';
+    mgTimeEl.textContent = '0';
+    mgGrid.innerHTML = '<p class="text-gray-400 text-center">Press Start to begin.</p>';
+  }
+
+  mgPlay.addEventListener('click', mgStartGame);
+  mgRestart.addEventListener('click', mgRestartGame);
+  mgBack.addEventListener('click', () => { mgRestartGame(); show(scrMenu); });
+
+  // UX: Custom Modal Alert (replacing window.alert)
+  function alertUser(title, message, type) {
+    const existingModal = document.getElementById('customAlert');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'customAlert';
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50 p-4';
+    
+    const colors = {
+      success: { bg: 'bg-emerald-600', border: 'border-emerald-400', title: 'text-white' },
+      danger: { bg: 'bg-red-600', border: 'border-red-400', title: 'text-white' }
+    };
+    const style = colors[type] || colors.success;
+
+    modal.innerHTML = `
+      <div class="${style.bg} border-4 ${style.border} p-8 rounded-xl max-w-sm w-full shadow-2xl transform scale-100 transition-all duration-300">
+        <h3 class="text-3xl font-black ${style.title} mb-3">${title}</h3>
+        <p class="text-white mb-6">${message}</p>
+        <button id="closeAlert" class="w-full py-2 rounded-lg bg-white text-gray-900 font-bold hover:bg-gray-200">OK</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    document.getElementById('closeAlert').onclick = () => modal.remove();
+  }
+
+
+  // Initial load state
+  document.addEventListener('DOMContentLoaded', () => {
+    // Only show the menu initially
+    show(scrMenu); 
+  });
+
+</script>
+</body>
+</html>
